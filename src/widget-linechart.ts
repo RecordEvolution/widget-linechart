@@ -7,6 +7,8 @@ import tinycolor, { ColorInput } from 'tinycolor2'
 // import 'chartjs-adapter-dayjs-4/dist/chartjs-adapter-dayjs-4.esm';
 // import 'chartjs-adapter-moment';
 // import 'chartjs-adapter-date-fns';
+import type { EChartsOption, LineSeriesOption } from 'echarts'
+
 import { InputData } from './definition-schema.js'
 
 type Dataseries = Exclude<InputData['dataseries'], undefined>[number]
@@ -20,9 +22,38 @@ export class WidgetLinechart extends LitElement {
     private canvasList: Map<string, { chart?: any; dataSets: Dataseries[] }> = new Map()
 
     version: string = 'versionplaceholder'
+    chartContainer?: HTMLDivElement | null | undefined
+    template: any = {
+        title: {
+            text: 'Line Chart',
+            left: 'center',
+            textStyle: {
+                fontSize: 10
+            }
+        },
+        xAxis: {
+            type: 'category',
+            name: 'xaxis',
+            nameLocation: 'middle',
+            nameGap: 40,
+            data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'sdf']
+        },
+        yAxis: {
+            type: 'value',
+            name: 'yaxis',
+            nameLocation: 'middle',
+            nameGap: 40
+        },
+        series: [
+            {
+                type: 'line',
+                data: [150, 230, 224, 218, 135, 147, 26, 34]
+            } as LineSeriesOption
+        ]
+    }
 
     update(changedProperties: Map<string, any>) {
-        if (changedProperties.has('inputData')) {
+        if (changedProperties.has('inputData') && this.chartContainer) {
             this.transformInputData()
             this.applyInputData()
         }
@@ -30,6 +61,8 @@ export class WidgetLinechart extends LitElement {
     }
 
     protected firstUpdated(): void {
+        this.chartContainer = this.shadowRoot?.querySelector('.chart-container') as HTMLDivElement
+        this.transformInputData()
         this.applyInputData()
     }
 
@@ -68,7 +101,7 @@ export class WidgetLinechart extends LitElement {
                         : derivedBdColors[i],
                     backgroundColor: ds.advanced?.chartName?.includes('#split#')
                         ? ds.backgroundColor
-                        : derivedBdColors[i],
+                        : derivedBgColors[i],
                     styling: ds.styling,
                     pointStyle: ds.styling?.pointStyle,
                     radius: ds.styling?.radius,
