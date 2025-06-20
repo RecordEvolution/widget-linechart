@@ -1,6 +1,4 @@
 {
-    "title": "Demo Chart",
-    "subTitle": "This is a demo chart with multiple data series.",
     "axis": {
         "timeseries": true,
         "xAxisLabel": "Time",
