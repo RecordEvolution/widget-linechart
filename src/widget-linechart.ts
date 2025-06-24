@@ -310,9 +310,8 @@ export class WidgetLinechart extends LitElement {
 
         this.canvasList.forEach((chart, label) => {
             chart.series.sort((a, b) => ((a.name as string) > (b.name as string) ? 1 : -1))
-            this.requestUpdate()
 
-            const option: any = window.structuredClone(this.template)
+            const option: any = chart.echart?.getOption() ?? window.structuredClone(this.template)
             // Title
             option.title.text = label
             // option.title.textStyle.fontSize = 25 * modifier
@@ -331,11 +330,10 @@ export class WidgetLinechart extends LitElement {
             // option.yAxis.axisLabel.fontSize = 20 * modifier
             option.yAxis.scale = this.inputData?.axis?.yAxisScaling ?? false
 
+            const notMerge = option.series.length !== chart.series.length
             option.series = chart.series
             // console.log('Applying data to chart', label, option)
             if (chart.series.length <= 1) option.legend.show = false
-            const oldOption: any = chart.echart?.getOption() ?? {}
-            const notMerge = oldOption.series?.length !== chart.series.length
             chart.echart?.setOption(option, { notMerge })
             // chart.echart?.resize()
         })
