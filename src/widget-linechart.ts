@@ -307,7 +307,7 @@ export class WidgetLinechart extends LitElement {
 
     applyData() {
         const modifier = 1
-
+        this.requestUpdate()
         this.canvasList.forEach((chart, label) => {
             chart.series.sort((a, b) => ((a.name as string) > (b.name as string) ? 1 : -1))
 
