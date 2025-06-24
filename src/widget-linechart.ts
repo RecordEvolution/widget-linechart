@@ -261,6 +261,7 @@ export class WidgetLinechart extends LitElement {
                         width: ds.styling?.borderWidth ?? 2,
                         type: ds.styling?.borderDash ?? 'solid'
                     },
+                    smooth: false,
                     itemStyle: {
                         color: fillColor,
                         borderColor: lineColor,
