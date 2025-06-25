@@ -37,6 +37,8 @@ type Theme = {
     theme_name: string
     theme_object: any
 }
+
+type SeriesOptionX = SeriesOption & { minDate?: number; maxDate?: number }
 @customElement('widget-linechart-versionplaceholder')
 export class WidgetLinechart extends LitElement {
     @property({ type: Object })
@@ -48,7 +50,7 @@ export class WidgetLinechart extends LitElement {
     @state()
     private canvasList: Map<
         string,
-        { echart?: echarts.ECharts; series: SeriesOption[]; doomed?: boolean; element?: HTMLDivElement }
+        { echart?: echarts.ECharts; series: SeriesOptionX[]; doomed?: boolean; element?: HTMLDivElement }
     > = new Map()
 
     @state() private themeBgColor?: string
@@ -248,13 +250,27 @@ export class WidgetLinechart extends LitElement {
                         : derivedBgColors[i]
                     : undefined
                 const data = distincts.length === 1 ? ds.data : ds.data?.filter((d) => d.pivot === piv)
-                const data2 = this.inputData?.axis?.timeseries
-                    ? data?.map((d) => [new Date(d.x ?? ''), d.y, d.r])
-                    : data?.map((d) => [d.x, d.y, d.r])
+                let data2 = this.inputData?.axis?.timeseries
+                    ? (data?.map((d) => ({ name: d.x, value: [new Date(d.x ?? '').getTime(), d.y, d.r] })) ??
+                      [])
+                    : (data?.map((d) => ({ name: d.x, value: [d.x, d.y, d.r] })) ?? [])
 
-                // preparing the echarts series option for later application
-                const pds: SeriesOption = {
+                let minDate: number = 0,
+                    maxDate: number = 0,
+                    extraData: (string | number | undefined)[][] = []
+                if (this.xAxisType() === 'time' && data2) {
+                    const dates = data2.map((d: any) => d.value[0] as number)
+                    minDate = Math.min(...dates)
+                    maxDate = Math.max(...dates)
+                    // extraData = (pds?.data as any[][])?.filter((d: any) => d[0] < minDate) ?? []
+                    // data2.unshift(...extraData) // add old data to the beginning of the new data
+                    // data2 = [...extraData, ...data2] // leave old data in for smooth shifting animation and delete after draw
+                }
+                const pds: SeriesOptionX = {
+                    id: name,
                     name: name,
+                    minDate,
+                    maxDate,
                     type: ds.type ?? 'line',
                     lineStyle: {
                         color: lineColor,
@@ -269,7 +285,7 @@ export class WidgetLinechart extends LitElement {
                     },
                     areaStyle: ds.styling?.fill ? { color: fillColor } : undefined,
                     symbol: ds.styling?.pointStyle ?? 'circle',
-                    symbolSize: (data) => data[2] ?? 4,
+                    symbolSize: (d: any[]) => d[2] ?? 4,
                     showSymbol: ds.styling?.pointStyle === 'none' ? false : true,
                     data: data2 ?? []
                 }
@@ -319,6 +335,18 @@ export class WidgetLinechart extends LitElement {
 
             // Axis
             option.xAxis.name = this.inputData?.axis?.xAxisLabel ?? ''
+            if (this.xAxisType() === 'time') {
+                const axisMax = chart.series.map((s) => s.maxDate ?? 0).reduce((a, b) => Math.max(a, b), 0)
+                const axisMin = chart.series
+                    .map((s) => s.minDate ?? Infinity)
+                    .reduce((a, b) => Math.min(a, b), Infinity)
+                // console.log('Setting xAxis time range', label, new Date(axisMin), new Date(axisMax))
+                option.xAxis = {
+                    ...option.xAxis,
+                    min: axisMin ?? new Date().getTime() - 1 * 24 * 60 * 60 * 1000, // 1 days ago,
+                    max: axisMax ?? new Date().getTime() // today
+                }
+            }
             option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
             option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
             // option.xAxis.axisLine.lineStyle.width = 2 * modifier
