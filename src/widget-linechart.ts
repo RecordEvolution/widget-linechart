@@ -38,7 +38,7 @@ type Theme = {
     theme_object: any
 }
 
-type SeriesOptionX = SeriesOption & { minDate?: number; maxDate?: number }
+type SeriesOptionX = SeriesOption & { minDate?: number; maxDate?: number; drawOrder: number }
 @customElement('widget-linechart-versionplaceholder')
 export class WidgetLinechart extends LitElement {
     @property({ type: Object })
@@ -65,6 +65,8 @@ export class WidgetLinechart extends LitElement {
     version: string = 'versionplaceholder'
     chartContainer: HTMLDivElement | null | undefined
     resizeObserver?: ResizeObserver
+    lastUpdateTime: number = 0
+    updateThresholdMs: number = 300
 
     constructor() {
         super()
@@ -184,9 +186,9 @@ export class WidgetLinechart extends LitElement {
 
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         this.chartContainer = this.shadowRoot?.querySelector('.chart-container')
+        this.registerTheme(this.theme)
         this.transformData()
         this.applyData()
-        this.registerTheme(this.theme)
         // Add ResizeObserver for chart container
         if (this.chartContainer) {
             this.resizeObserver = new ResizeObserver(() => {
@@ -287,7 +289,8 @@ export class WidgetLinechart extends LitElement {
                     symbol: ds.styling?.pointStyle ?? 'circle',
                     symbolSize: (d: any[]) => d[2] ?? 4,
                     showSymbol: ds.styling?.pointStyle === 'none' ? false : true,
-                    data: data2 ?? []
+                    data: data2 ?? [],
+                    drawOrder: ds.advanced?.drawOrder ?? 0
                 }
                 let chartName = ds.advanced?.chartName ?? ''
                 chartName = chartName.replace('#split#', prefix)
@@ -307,6 +310,17 @@ export class WidgetLinechart extends LitElement {
         })
 
         doomedCharts.forEach((label) => this.canvasList.delete(label))
+        this.canvasList = new Map(
+            [...this.canvasList.entries()].sort(([labelA, va], [labelB, vb]) => {
+                const orderA = va.series?.[0].drawOrder ?? 0
+                const orderB = vb.series?.[0].drawOrder ?? 0
+                if (orderA !== orderB) {
+                    return orderA - orderB
+                }
+                console.log('Sorting by label', labelA, labelB, labelA.localeCompare(labelB))
+                return labelA.localeCompare(labelB)
+            })
+        )
     }
 
     xAxisType(): 'value' | 'log' | 'category' | 'time' | undefined {
@@ -324,7 +338,11 @@ export class WidgetLinechart extends LitElement {
 
     applyData() {
         const modifier = 1
-        this.requestUpdate()
+        // Sort chartContainer children by drawOrder and label
+        if (!this.chartContainer) return
+        for (const canvas of this.canvasList.values()) {
+            if (canvas.element) this.chartContainer.appendChild(canvas.element)
+        }
         this.canvasList.forEach((chart, label) => {
             chart.series.sort((a, b) => ((a.name as string) > (b.name as string) ? 1 : -1))
 
@@ -363,6 +381,14 @@ export class WidgetLinechart extends LitElement {
             option.series = chart.series
             // console.log('Applying data to chart', label, option)
             if (chart.series.length <= 1) option.legend.show = false
+            // const now = Date.now()
+            // const timeSinceLastUpdate = now - this.lastUpdateTime
+            // this.lastUpdateTime = now
+
+            // const tooFast = timeSinceLastUpdate < this.updateThresholdMs
+            // console.warn('too fast')
+            // option.animation = !tooFast
+            // option.animationDuration = tooFast ? 0 : this.updateThresholdMs
             chart.echart?.setOption(option, { notMerge })
             // chart.echart?.resize()
         })
@@ -392,9 +418,10 @@ export class WidgetLinechart extends LitElement {
         newContainer.setAttribute('name', label)
         newContainer.setAttribute('class', 'sizer')
         this.chartContainer.appendChild(newContainer)
+        console.log('Setting up chart for label:', label)
 
         const newChart = echarts.init(newContainer, this.theme?.theme_name)
-        const chart = { echart: newChart, series: [] as SeriesOption[], element: newContainer }
+        const chart = { echart: newChart, series: [] as SeriesOptionX[], element: newContainer }
         this.canvasList.set(label, chart)
 
         return chart
