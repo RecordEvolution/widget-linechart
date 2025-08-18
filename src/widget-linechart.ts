@@ -50,7 +50,13 @@ export class WidgetLinechart extends LitElement {
     @state()
     private canvasList: Map<
         string,
-        { echart?: echarts.ECharts; series: SeriesOptionX[]; doomed?: boolean; element?: HTMLDivElement }
+        {
+            echart?: echarts.ECharts
+            series: SeriesOptionX[]
+            doomed?: boolean
+            element?: HTMLDivElement
+            drawing: boolean
+        }
     > = new Map()
 
     @state() private themeBgColor?: string
@@ -171,8 +177,13 @@ export class WidgetLinechart extends LitElement {
 
     update(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         if (changedProperties.has('inputData') && this.chartContainer) {
-            this.transformData()
-            this.applyData()
+            const drawingStates = Array.from(this.canvasList).map(([key, chart]) => chart.drawing)
+            if (drawingStates.every((d) => !d)) {
+                this.transformData()
+                this.applyData()
+            } else {
+                console.log('skipping linechart draw')
+            }
         }
 
         if (changedProperties.has('theme')) {
@@ -317,7 +328,6 @@ export class WidgetLinechart extends LitElement {
                 if (orderA !== orderB) {
                     return orderA - orderB
                 }
-                console.log('Sorting by label', labelA, labelB, labelA.localeCompare(labelB))
                 return labelA.localeCompare(labelB)
             })
         )
@@ -381,14 +391,15 @@ export class WidgetLinechart extends LitElement {
             option.series = chart.series
             // console.log('Applying data to chart', label, option)
             if (chart.series.length <= 1) option.legend.show = false
-            // const now = Date.now()
-            // const timeSinceLastUpdate = now - this.lastUpdateTime
-            // this.lastUpdateTime = now
+            const now = Date.now()
+            const timeSinceLastUpdate = now - this.lastUpdateTime
+            this.lastUpdateTime = now
 
-            // const tooFast = timeSinceLastUpdate < this.updateThresholdMs
-            // console.warn('too fast')
-            // option.animation = !tooFast
-            // option.animationDuration = tooFast ? 0 : this.updateThresholdMs
+            const tooFast = timeSinceLastUpdate < this.updateThresholdMs
+            option.animation = !tooFast
+            option.animationDuration = tooFast ? 0 : this.updateThresholdMs
+            chart.echart?.on('finished', () => (chart.drawing = false))
+            chart.drawing = true
             chart.echart?.setOption(option, { notMerge })
             // chart.echart?.resize()
         })
@@ -418,10 +429,14 @@ export class WidgetLinechart extends LitElement {
         newContainer.setAttribute('name', label)
         newContainer.setAttribute('class', 'sizer')
         this.chartContainer.appendChild(newContainer)
-        console.log('Setting up chart for label:', label)
 
         const newChart = echarts.init(newContainer, this.theme?.theme_name)
-        const chart = { echart: newChart, series: [] as SeriesOptionX[], element: newContainer }
+        const chart = {
+            echart: newChart,
+            series: [] as SeriesOptionX[],
+            element: newContainer,
+            drawing: false
+        }
         this.canvasList.set(label, chart)
 
         return chart

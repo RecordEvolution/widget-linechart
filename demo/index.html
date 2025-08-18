@@ -56,6 +56,12 @@
             const keyPathsToRandomize = ['dataseries.0.data.2.y', 'title', 'dataseries.2.data.2.y']
 
             setInterval(() => {
+                /* const timeseries = data.dataseries[0].data //randomizeObjectValues(data, keyPathsToRandomize)
+                const oldtsp = new Date(timeseries[timeseries.length -1].x)
+                const newtsp = new Date(oldtsp.getTime() + 1000).toISOString()
+                timeseries.push({x: newtsp, y: Math.floor(Math.random() * 100)})
+                timeseries.shift()
+                widget.inputData = window.structuredClone(data) */
                 const randomizedObj = randomizeObjectValues(data, keyPathsToRandomize)
                 widget.inputData = randomizedObj
             }, 1000)
