@@ -56,6 +56,9 @@ export class WidgetLinechart extends LitElement {
             doomed?: boolean
             element?: HTMLDivElement
             drawing: boolean
+            lastUpdateTime?: number
+            updateIntervals?: number[]
+            lastMaxTimestamp?: number
         }
     > = new Map()
 
@@ -71,8 +74,8 @@ export class WidgetLinechart extends LitElement {
     version: string = 'versionplaceholder'
     chartContainer: HTMLDivElement | null | undefined
     resizeObserver?: ResizeObserver
-    lastUpdateTime: number = 0
     updateThresholdMs: number = 300
+    private maxIntervalSamples: number = 3
 
     constructor() {
         super()
@@ -177,13 +180,13 @@ export class WidgetLinechart extends LitElement {
 
     update(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         if (changedProperties.has('inputData') && this.chartContainer) {
-            const drawingStates = Array.from(this.canvasList).map(([key, chart]) => chart.drawing)
-            if (drawingStates.every((d) => !d)) {
-                this.transformData()
-                this.applyData()
-            } else {
-                console.log('skipping linechart draw')
-            }
+            // const drawingStates = Array.from(this.canvasList).map(([key, chart]) => chart.drawing)
+            // if (drawingStates.every((d) => !d)) {
+            this.transformData()
+            this.applyData()
+            // } else {
+            //     console.log('skipping linechart draw')
+            // }
         }
 
         if (changedProperties.has('theme')) {
@@ -346,6 +349,56 @@ export class WidgetLinechart extends LitElement {
         return 'category'
     }
 
+    calculateAnimationDuration(chart: any, label: string): number {
+        const now = Date.now()
+        const isSingleSeries = chart.series.length === 1
+        // Only apply adaptive animation for single series charts
+        if (!isSingleSeries || !this.inputData?.axis?.timeseries) {
+            return this.updateThresholdMs
+        }
+
+        // Find the newest timestamp in the current chart data
+        let maxTimestamp = 0
+        if (this.xAxisType() === 'time') {
+            for (const series of chart.series) {
+                const seriesData = series.data as any[]
+                for (const point of seriesData || []) {
+                    const timestamp = point.value?.[0] || 0
+                    if (timestamp > maxTimestamp) {
+                        maxTimestamp = timestamp
+                    }
+                }
+            }
+        } else {
+            // For non-time series, use the current time as proxy
+            maxTimestamp = now
+        }
+
+        // Only track update if the data actually changed (new timestamp)
+        chart.lastMaxTimestamp = chart.lastMaxTimestamp ?? 0
+        const dataChanged = maxTimestamp > chart.lastMaxTimestamp
+        if (dataChanged) {
+            chart.updateIntervals ??= []
+            if (chart.lastUpdateTime > 0) {
+                const timeSinceLastUpdate = now - chart.lastUpdateTime
+                chart.updateIntervals.push(timeSinceLastUpdate)
+                if (chart.updateIntervals.length > this.maxIntervalSamples) {
+                    chart.updateIntervals.shift()
+                }
+            }
+            chart.lastUpdateTime = now
+            chart.lastMaxTimestamp = maxTimestamp
+        }
+
+        // Calculate average update interval
+        const avgInterval =
+            chart.updateIntervals && chart.updateIntervals.length > 0
+                ? chart.updateIntervals.reduce((a: number, b: number) => a + b, 0) /
+                  chart.updateIntervals.length
+                : this.updateThresholdMs
+        return avgInterval
+    }
+
     applyData() {
         const modifier = 1
         // Sort chartContainer children by drawOrder and label
@@ -391,16 +444,16 @@ export class WidgetLinechart extends LitElement {
             option.series = chart.series
             // console.log('Applying data to chart', label, option)
             if (chart.series.length <= 1) option.legend.show = false
-            const now = Date.now()
-            const timeSinceLastUpdate = now - this.lastUpdateTime
-            this.lastUpdateTime = now
 
-            const tooFast = timeSinceLastUpdate < this.updateThresholdMs
-            option.animation = !tooFast
-            option.animationDuration = tooFast ? 0 : this.updateThresholdMs
+            // Calculate animation duration based on update frequency
+            const animationDuration = this.calculateAnimationDuration(chart, label)
+            option.animation = true
+            option.animationEasing = 'linear' // Use linear easing for predictable timing
+            option.animationDuration = animationDuration
+            option.animationDurationUpdate = animationDuration // Explicitly set update animation
             chart.echart?.on('finished', () => (chart.drawing = false))
             chart.drawing = true
-            chart.echart?.setOption(option, { notMerge })
+            chart.echart?.setOption(option, { notMerge, lazyUpdate: true })
             // chart.echart?.resize()
         })
     }
@@ -422,7 +475,7 @@ export class WidgetLinechart extends LitElement {
         }
 
         if (!this.chartContainer) {
-            console.warn('Chart container not found')
+            // console.warn('Chart container not found')
             return
         }
         const newContainer = document.createElement('div')
@@ -435,7 +488,10 @@ export class WidgetLinechart extends LitElement {
             echart: newChart,
             series: [] as SeriesOptionX[],
             element: newContainer,
-            drawing: false
+            drawing: false,
+            lastUpdateTime: 0,
+            updateIntervals: [],
+            lastMaxTimestamp: 0
         }
         this.canvasList.set(label, chart)
 
