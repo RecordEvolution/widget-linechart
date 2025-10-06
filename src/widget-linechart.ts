@@ -439,7 +439,11 @@ export class WidgetLinechart extends LitElement {
             // option.yAxis.axisLine.lineStyle.width = 2 * modifier
             // option.yAxis.axisLabel.fontSize = 20 * modifier
             option.yAxis.scale = this.inputData?.axis?.yAxisScaling ?? false
-            option.yAxis.axisLabel.formatter = (value: number) => Math.round(value * 100) / 100
+            if (['value', 'log'].includes(option.yAxis.type))
+                option.yAxis.axisLabel = {
+                    'font-size': 14,
+                    formatter: (value: number) => Math.round(value * 100) / 100
+                }
 
             const notMerge = option.series.length !== chart.series.length
             option.series = chart.series
