@@ -84,6 +84,7 @@ export class WidgetLinechart extends LitElement {
             title: {
                 text: 'Temperature Change in the Coming Week',
                 left: 20,
+                top: 0,
                 textStyle: {
                     fontSize: 14
                 }
