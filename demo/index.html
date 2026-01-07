@@ -11,8 +11,8 @@
                 width: 100%;
                 height: 100%;
                 background-color: #f5f5f5;
-                font-family: Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-                    'Segoe UI Symbol';
+                font-family:
+                    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
                 --font-family-serif: Helvetica;
                 color: #291f42;
                 font-weight: 400;
@@ -35,11 +35,11 @@
         <script type="module">
             import { render } from 'lit'
             import { html, unsafeStatic } from 'lit/static-html.js'
-            const packageJson = await fetch('../package.json').then((res) => res.json())
+            import packageJson from '../package.json'
             const tag = unsafeStatic(`widget-linechart-${packageJson.version}`)
-            import '../dist/widget-linechart.js'
-            const data = await fetch('../src/default-data.json').then((res) => res.json())
-            const themeObject = await fetch('themes/light.json').then((res) => res.json())
+            import '../src/widget-linechart.ts'
+            import data from '../src/default-data.json'
+            import themeObject from './themes/light.json'
             const theme = { theme_name: 'light', theme_object: themeObject }
 
             render(
@@ -49,19 +49,13 @@
                         string from the package.json
                     </${tag}>
                 `,
-                document.querySelector('#demo')
+                document.getElementById('demo')
             )
 
             const widget = document.getElementById('demo').children[0]
             const keyPathsToRandomize = ['dataseries.0.data.2.y', 'title', 'dataseries.2.data.2.y']
 
             setInterval(() => {
-                /* const timeseries = data.dataseries[0].data //randomizeObjectValues(data, keyPathsToRandomize)
-                const oldtsp = new Date(timeseries[timeseries.length -1].x)
-                const newtsp = new Date(oldtsp.getTime() + 1000).toISOString()
-                timeseries.push({x: newtsp, y: Math.floor(Math.random() * 100)})
-                timeseries.shift()
-                widget.inputData = window.structuredClone(data) */
                 const randomizedObj = randomizeObjectValues(data, keyPathsToRandomize)
                 widget.inputData = randomizedObj
             }, 1000)

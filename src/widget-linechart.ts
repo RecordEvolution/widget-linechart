@@ -11,7 +11,7 @@ import {
     GridComponent
 } from 'echarts/components'
 import { LineChart, BarChart, ScatterChart } from 'echarts/charts'
-import { UniversalTransition } from 'echarts/features'
+import { UniversalTransition, LegacyGridContainLabel } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import tinycolor, { ColorInput } from 'tinycolor2'
 
@@ -26,7 +26,8 @@ echarts.use([
     BarChart,
     ScatterChart,
     CanvasRenderer,
-    UniversalTransition
+    UniversalTransition,
+    LegacyGridContainLabel
 ])
 
 import { InputData } from './definition-schema'
@@ -225,7 +226,18 @@ export class WidgetLinechart extends LitElement {
 
         if (!theme || !theme.theme_object || !theme.theme_name) return
 
-        echarts.registerTheme(theme.theme_name, theme.theme_object)
+        // Filter out component keys that would trigger warnings about unregistered components
+        const excludeKeys = [
+            'parallel',
+            'geo',
+            'timeline',
+            'visualMap',
+            'markPoint'
+        ]
+        const filteredTheme = Object.fromEntries(
+            Object.entries(theme.theme_object).filter(([key]) => !excludeKeys.includes(key))
+        )
+        echarts.registerTheme(theme.theme_name, filteredTheme)
     }
 
     transformData() {
@@ -519,6 +531,7 @@ export class WidgetLinechart extends LitElement {
             box-sizing: border-box;
             position: relative;
             margin: auto;
+            container-type: size;
         }
 
         .paging:not([active]) {
@@ -530,7 +543,7 @@ export class WidgetLinechart extends LitElement {
             flex-direction: column;
             height: 100%;
             width: 100%;
-            padding: 16px;
+            padding: 2cqh 2cqw;
             box-sizing: border-box;
             gap: 12px;
         }
