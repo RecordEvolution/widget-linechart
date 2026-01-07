@@ -60,6 +60,7 @@ export class WidgetLinechart extends LitElement {
             lastUpdateTime?: number
             updateIntervals?: number[]
             lastMaxTimestamp?: number
+            lastConfig?: string
         }
     > = new Map()
 
@@ -98,11 +99,10 @@ export class WidgetLinechart extends LitElement {
                 top: 0
             },
             grid: {
-                backgroundColor: 'rgba(0, 255, 0, 0.1)',
                 top: 30,
                 bottom: 20,
                 left: 20,
-                right: 10,
+                right: 0,
                 containLabel: true // ensures labels are not cut off
             },
             toolbox: {
@@ -422,56 +422,92 @@ export class WidgetLinechart extends LitElement {
         this.canvasList.forEach((chart, label) => {
             chart.series.sort((a, b) => ((a.name as string) > (b.name as string) ? 1 : -1))
 
-            const option: any = chart.echart?.getOption() ?? window.structuredClone(this.template)
+            // Visibility controls
+            const showLegend = this.inputData?.axis?.showLegend ?? true
+            const showTitle = this.inputData?.axis?.showTitle ?? true
+            const showXAxis = this.inputData?.axis?.showXAxis ?? true
+            const showYAxis = this.inputData?.axis?.showYAxis ?? true
+            const showBox = this.inputData?.axis?.showBox ?? false
+
+            // Track config changes to determine if full rebuild needed
+            const currentConfig = JSON.stringify({
+                showLegend,
+                showTitle,
+                showXAxis,
+                showYAxis,
+                showBox,
+                xAxisLabel: this.inputData?.axis?.xAxisLabel,
+                yAxisLabel: this.inputData?.axis?.yAxisLabel,
+                xAxisZoom: this.inputData?.axis?.xAxisZoom,
+                yAxisScaling: this.inputData?.axis?.yAxisScaling,
+                xAxisType: this.xAxisType(),
+                yAxisType: this.yAxisType(),
+                seriesCount: chart.series.length
+            })
+            const configChanged = chart.lastConfig !== currentConfig
+            chart.lastConfig = currentConfig
+
+            // Use efficient merge for data-only updates, full rebuild for config changes
+            const option: any = configChanged ? window.structuredClone(this.template) : chart.echart?.getOption() ?? window.structuredClone(this.template)
+
             // Title
             option.title.text = label
-            // option.title.textStyle.fontSize = 25 * modifier
+            option.title.show = showTitle
 
             // Axis
             option.xAxis.name = this.inputData?.axis?.xAxisLabel ?? ''
+            option.xAxis.type = this.xAxisType()
+            option.xAxis.show = showXAxis
             if (this.xAxisType() === 'time') {
                 const axisMax = chart.series.map((s) => s.maxDate ?? 0).reduce((a, b) => Math.max(a, b), 0)
                 const axisMin = chart.series
                     .map((s) => s.minDate ?? Infinity)
                     .reduce((a, b) => Math.min(a, b), Infinity)
-                // console.log('Setting xAxis time range', label, new Date(axisMin), new Date(axisMax))
                 option.xAxis = {
                     ...option.xAxis,
-                    min: axisMin ?? new Date().getTime() - 1 * 24 * 60 * 60 * 1000, // 1 days ago,
-                    max: axisMax ?? new Date().getTime() // today
+                    min: axisMin ?? new Date().getTime() - 1 * 24 * 60 * 60 * 1000,
+                    max: axisMax ?? new Date().getTime()
                 }
             }
             option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
             option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
-            // option.xAxis.axisLine.lineStyle.width = 2 * modifier
-            // option.xAxis.axisLabel.fontSize = 20 * modifier
-            option.xAxis.type = this.xAxisType()
-            option.yAxis.type = this.yAxisType()
 
+            option.yAxis.type = this.yAxisType()
             option.yAxis.name = this.inputData?.axis?.yAxisLabel ?? ''
-            // option.yAxis.axisLine.lineStyle.width = 2 * modifier
-            // option.yAxis.axisLabel.fontSize = 20 * modifier
             option.yAxis.scale = this.inputData?.axis?.yAxisScaling ?? false
+            option.yAxis.show = showYAxis
             if (['value', 'log'].includes(option.yAxis.type))
                 option.yAxis.axisLabel = {
                     'font-size': 14,
                     formatter: (value: number) => Math.round(value * 100) / 100
                 }
 
-            const notMerge = option.series.length !== chart.series.length
             option.series = chart.series
-            // console.log('Applying data to chart', label, option)
-            if (chart.series.length <= 1) option.legend.show = false
+            option.legend.show = showLegend
+
+            // Dynamic grid padding based on visible elements
+            option.grid = {
+                ...option.grid,
+                show: showBox,
+                backgroundColor: 'transparent',
+                borderWidth: showBox ? 1 : 0,
+                borderColor: this.themeTitleColor ?? '#ccc',
+                top: showTitle ? 30 : 0,
+                bottom: showXAxis ? 20 : 0,
+                left: showYAxis ? 20 : 0,
+                right: 0,
+                containLabel: showXAxis || showYAxis
+            }
 
             // Calculate animation duration based on update frequency
             const animationDuration = this.calculateAnimationDuration(chart, label)
             option.animation = true
-            option.animationEasing = 'linear' // Use linear easing for predictable timing
+            option.animationEasing = 'linear'
             option.animationDuration = animationDuration
-            option.animationDurationUpdate = animationDuration // Explicitly set update animation
+            option.animationDurationUpdate = animationDuration
             chart.echart?.on('finished', () => (chart.drawing = false))
             chart.drawing = true
-            chart.echart?.setOption(option, { notMerge, lazyUpdate: true })
+            chart.echart?.setOption(option, { notMerge: configChanged, lazyUpdate: true })
             // chart.echart?.resize()
         })
     }

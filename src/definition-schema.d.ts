@@ -26,6 +26,26 @@ export type YAxisScaling = boolean;
  */
 export type VerticalLayout = boolean;
 /**
+ * Display the chart legend.
+ */
+export type ShowLegend = boolean;
+/**
+ * Display the chart title.
+ */
+export type ShowTitle = boolean;
+/**
+ * Display the x-axis with labels. When hidden, bottom padding is removed.
+ */
+export type ShowXAxis = boolean;
+/**
+ * Display the y-axis with labels. When hidden, left padding is removed.
+ */
+export type ShowYAxis = boolean;
+/**
+ * Display a border frame around the chart area.
+ */
+export type ShowBoxFrame = boolean;
+/**
  * The name for this data series
  */
 export type Label = string;
@@ -96,6 +116,11 @@ export interface AxisSettings {
     xAxisZoom?: XAxisZoomTool;
     yAxisScaling?: YAxisScaling;
     columnLayout?: VerticalLayout;
+    showLegend?: ShowLegend;
+    showTitle?: ShowTitle;
+    showXAxis?: ShowXAxis;
+    showYAxis?: ShowYAxis;
+    showBox?: ShowBoxFrame;
     [k: string]: unknown;
 }
 /**

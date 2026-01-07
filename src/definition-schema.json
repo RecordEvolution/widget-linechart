@@ -2,60 +2,94 @@
     "title": "inputData",
     "type": "object",
     "properties": {
-        "title": {
-            "title": "Title",
-            "type": "string",
-            "order": 1
-        },
-        "subTitle": {
-            "title": "Subtitle",
-            "type": "string",
-            "order": 2
-        },
+        "title": { "title": "Title", "type": "string", "order": 1 },
+        "subTitle": { "title": "Subtitle", "type": "string", "order": 2 },
         "axis": {
-            "title": "Axis Settings",
+            "title": "Configuration",
             "type": "object",
             "order": 3,
             "properties": {
-                "xAxisLabel": {
-                    "title": "X-Axis Label",
-                    "type": "string",
-                    "dataDrivenDisabled": false,
-                    "order": 3
+                "showLegend": {
+                    "title": "Show Legend",
+                    "description": "Display the chart legend.",
+                    "type": "boolean",
+                    "default": true,
+                    "dataDrivenDisabled": true,
+                    "order": 1
                 },
-                "yAxisLabel": {
-                    "title": "Y-Axis Label",
-                    "type": "string",
-                    "dataDrivenDisabled": false,
-                    "order": 4
+                "showTitle": {
+                    "title": "Show Title",
+                    "description": "Display the chart title.",
+                    "type": "boolean",
+                    "default": true,
+                    "dataDrivenDisabled": true,
+                    "order": 2
+                },
+                "showBox": {
+                    "title": "Show Box Frame",
+                    "description": "Display a border frame around the chart area.",
+                    "type": "boolean",
+                    "default": false,
+                    "dataDrivenDisabled": true,
+                    "order": 3
                 },
                 "timeseries": {
                     "title": "Timeseries Chart",
                     "description": "This will apply a proper time series x-Axis. Check if your x-values are timestamps.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
-                    "order": 5
-                },
-                "xAxisZoom": {
-                    "title": "X-Axis Zoom Tool",
-                    "type": "boolean",
-                    "description": "If checked, a zoom tool will be shown on the x-axis to zoom into the chart.",
-                    "dataDrivenDisabled": true,
-                    "order": 6
-                },
-                "yAxisScaling": {
-                    "title": "Y-Axis Scaling",
-                    "description": "If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.",
-                    "type": "boolean",
-                    "dataDrivenDisabled": true,
-                    "order": 7
+                    "order": 4
                 },
                 "columnLayout": {
                     "title": "Vertical Layout",
                     "description": "When multiple charts are drawn, then they will be layed out horizontically or vertically.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
+                    "order": 5
+                },
+
+                "xAxisLabel": {
+                    "title": "X-Axis Label",
+                    "type": "string",
+                    "dataDrivenDisabled": false,
+                    "order": 6
+                },
+                "showXAxis": {
+                    "title": "Show X-Axis",
+                    "description": "Display the x-axis with labels. When hidden, bottom padding is removed.",
+                    "type": "boolean",
+                    "default": true,
+                    "dataDrivenDisabled": true,
+                    "order": 7
+                },
+                "xAxisZoom": {
+                    "title": "X-Axis Zoom Tool",
+                    "type": "boolean",
+                    "description": "If checked, a zoom tool will be shown on the x-axis to zoom into the chart.",
+                    "dataDrivenDisabled": true,
                     "order": 8
+                },
+
+                "yAxisLabel": {
+                    "title": "Y-Axis Label",
+                    "type": "string",
+                    "dataDrivenDisabled": false,
+                    "order": 9
+                },
+                "showYAxis": {
+                    "title": "Show Y-Axis",
+                    "description": "Display the y-axis with labels. When hidden, left padding is removed.",
+                    "type": "boolean",
+                    "default": true,
+                    "dataDrivenDisabled": true,
+                    "order": 10
+                },
+                "yAxisScaling": {
+                    "title": "Y-Axis Scaling",
+                    "description": "If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.",
+                    "type": "boolean",
+                    "dataDrivenDisabled": true,
+                    "order": 11
                 }
             }
         },
@@ -89,12 +123,7 @@
                         "color": true,
                         "order": 3
                     },
-                    "borderColor": {
-                        "title": "Line Color",
-                        "type": "color",
-                        "color": true,
-                        "order": 4
-                    },
+                    "borderColor": { "title": "Line Color", "type": "color", "color": true, "order": 4 },
                     "styling": {
                         "title": "Styling",
                         "description": "",
@@ -177,12 +206,7 @@
                                     "order": 1,
                                     "required": true
                                 },
-                                "y": {
-                                    "title": "Y-Value",
-                                    "type": "string",
-                                    "order": 2,
-                                    "required": true
-                                },
+                                "y": { "title": "Y-Value", "type": "string", "order": 2, "required": true },
                                 "r": {
                                     "title": "Bubble Size",
                                     "description": "Controls the symbol size for line and scatter charts.",
