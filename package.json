@@ -3,7 +3,7 @@
     "description": "REWidget widget-linechart",
     "license": "MIT",
     "author": "widget-linechart",
-    "version": "1.6.25",
+    "version": "1.6.26",
     "type": "module",
     "main": "dist/widget-linechart.js",
     "types": "dist/src/widget-linechart.d.ts",
