@@ -7,24 +7,6 @@
 
 export type Title = string;
 export type Subtitle = string;
-export type XAxisLabel = string;
-export type YAxisLabel = string;
-/**
- * This will apply a proper time series x-Axis. Check if your x-values are timestamps.
- */
-export type TimeseriesChart = boolean;
-/**
- * If checked, a zoom tool will be shown on the x-axis to zoom into the chart.
- */
-export type XAxisZoomTool = boolean;
-/**
- * If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.
- */
-export type YAxisScaling = boolean;
-/**
- * When multiple charts are drawn, then they will be layed out horizontically or vertically.
- */
-export type VerticalLayout = boolean;
 /**
  * Display the chart legend.
  */
@@ -34,17 +16,35 @@ export type ShowLegend = boolean;
  */
 export type ShowTitle = boolean;
 /**
+ * Display a border frame around the chart area.
+ */
+export type ShowBoxFrame = boolean;
+/**
+ * This will apply a proper time series x-Axis. Check if your x-values are timestamps.
+ */
+export type TimeseriesChart = boolean;
+/**
+ * When multiple charts are drawn, then they will be layed out horizontically or vertically.
+ */
+export type VerticalLayout = boolean;
+export type XAxisLabel = string;
+/**
  * Display the x-axis with labels. When hidden, bottom padding is removed.
  */
 export type ShowXAxis = boolean;
+/**
+ * If checked, a zoom tool will be shown on the x-axis to zoom into the chart.
+ */
+export type XAxisZoomTool = boolean;
+export type YAxisLabel = string;
 /**
  * Display the y-axis with labels. When hidden, left padding is removed.
  */
 export type ShowYAxis = boolean;
 /**
- * Display a border frame around the chart area.
+ * If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.
  */
-export type ShowBoxFrame = boolean;
+export type YAxisScaling = boolean;
 /**
  * The name for this data series
  */
@@ -105,22 +105,22 @@ export type Dataseries = {
 export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
-    axis?: AxisSettings;
+    axis?: Configuration;
     dataseries?: Dataseries;
     [k: string]: unknown;
 }
-export interface AxisSettings {
-    xAxisLabel?: XAxisLabel;
-    yAxisLabel?: YAxisLabel;
-    timeseries?: TimeseriesChart;
-    xAxisZoom?: XAxisZoomTool;
-    yAxisScaling?: YAxisScaling;
-    columnLayout?: VerticalLayout;
+export interface Configuration {
     showLegend?: ShowLegend;
     showTitle?: ShowTitle;
-    showXAxis?: ShowXAxis;
-    showYAxis?: ShowYAxis;
     showBox?: ShowBoxFrame;
+    timeseries?: TimeseriesChart;
+    columnLayout?: VerticalLayout;
+    xAxisLabel?: XAxisLabel;
+    showXAxis?: ShowXAxis;
+    xAxisZoom?: XAxisZoomTool;
+    yAxisLabel?: YAxisLabel;
+    showYAxis?: ShowYAxis;
+    yAxisScaling?: YAxisScaling;
     [k: string]: unknown;
 }
 /**
