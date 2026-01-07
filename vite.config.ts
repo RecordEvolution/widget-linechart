@@ -7,13 +7,14 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 export default defineConfig({
     server: { open: '/demo/', port: 8000 },
     resolve: { alias: { tslib: 'tslib/tslib.es6.js' } },
-    optimizeDeps: { include: ['echarts', 'zrender', 'tslib', 'tinycolor2'] },
+    optimizeDeps: { exclude: ['echarts', 'tinycolor2'] },
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     plugins: [replace({ versionplaceholder: pkg.version, preventAssignment: true })],
     build: {
         lib: { entry: 'src/widget-linechart.ts', formats: ['es'], fileName: 'widget-linechart' },
         sourcemap: true,
         rollupOptions: {
+            external: [/^echarts/, 'tinycolor2'],
             output: { banner: '/* @license Copyright (c) 2025 Record Evolution GmbH. All rights reserved.*/' }
         }
     }

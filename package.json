@@ -23,10 +23,12 @@
         "release": "npm run build && npm run types && npm version patch --tag-version-prefix='' && git push && git push --tag && npm run build"
     },
     "dependencies": {
-        "echarts": "6.0.0",
         "lit": "^3.3.2",
-        "tinycolor2": "^1.6.0",
         "tslib": "^2.8.1"
+    },
+    "peerDependencies": {
+        "echarts": "^6.0.0",
+        "tinycolor2": "^1.6.0"
     },
     "devDependencies": {
         "@custom-elements-manifest/analyzer": "^0.10.4",
