@@ -76,7 +76,7 @@ export type YValue = string;
 /**
  * Controls the symbol size for line and scatter charts.
  */
-export type BubbleSize = number;
+export type PointSize = number;
 /**
  * You can specify a column in the input data to autogenerate dataseries for each distinct entry in this column. E.g. if you have a table with columns [city, timestamp, temperature] and specify 'city' as split column, then you will get a line for each city.
  */
@@ -87,7 +87,7 @@ export type SplitDataBy = string;
 export type Data = {
     x?: XValue;
     y?: YValue;
-    r?: BubbleSize;
+    r?: PointSize;
     pivot?: SplitDataBy;
     [k: string]: unknown;
 }[];
