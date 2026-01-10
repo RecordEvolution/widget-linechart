@@ -14,7 +14,7 @@ export default defineConfig({
         sourcemap: true,
         rollupOptions: {
             external: [/^echarts/, 'tinycolor2'],
-            output: { banner: '/* @license Copyright (c) 2025 Record Evolution GmbH. All rights reserved.*/' }
+            output: { banner: '/* @license Copyright (c) 2026 Record Evolution GmbH. All rights reserved.*/' }
         }
     }
 })

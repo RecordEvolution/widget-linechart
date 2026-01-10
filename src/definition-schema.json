@@ -134,6 +134,7 @@
                                 "title": "Line Area Fill",
                                 "description": "Check this box to turn a line chart into an area chart.",
                                 "type": "boolean",
+                                "condition": { "relativePath": "../../type", "showIfValueIn": ["line"] },
                                 "dataDrivenDisabled": true,
                                 "order": 1
                             },
@@ -148,12 +149,17 @@
                                 "title": "Line Dash Style",
                                 "description": "",
                                 "type": "string",
+                                "condition": { "relativePath": "../../type", "showIfValueIn": ["line"] },
                                 "enum": ["solid", "dashed", "dotted"],
                                 "dataDrivenDisabled": true,
                                 "order": 3
                             },
                             "pointStyle": {
                                 "title": "Symbol Style",
+                                "condition": {
+                                    "relativePath": "../../type",
+                                    "showIfValueIn": ["line", "scatter"]
+                                },
                                 "type": "string",
                                 "enum": [
                                     "circle",
@@ -208,8 +214,12 @@
                                 },
                                 "y": { "title": "Y-Value", "type": "string", "order": 2, "required": true },
                                 "r": {
-                                    "title": "Bubble Size",
+                                    "title": "Point Size",
                                     "description": "Controls the symbol size for line and scatter charts.",
+                                    "condition": {
+                                        "relativePath": "../../../type",
+                                        "showIfValueIn": ["line", "scatter"]
+                                    },
                                     "order": 3,
                                     "type": "number"
                                 },

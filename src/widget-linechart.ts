@@ -347,6 +347,13 @@ export class WidgetLinechart extends LitElement {
                 return labelA.localeCompare(labelB)
             })
         )
+
+        // Resize remaining charts if any were removed
+        if (doomedCharts.length > 0) {
+            this.canvasList.forEach((chart) => {
+                chart.echart?.resize()
+            })
+        }
     }
 
     xAxisType(): 'value' | 'log' | 'category' | 'time' | undefined {
@@ -442,7 +449,8 @@ export class WidgetLinechart extends LitElement {
                 yAxisScaling: this.inputData?.axis?.yAxisScaling,
                 xAxisType: this.xAxisType(),
                 yAxisType: this.yAxisType(),
-                seriesCount: chart.series.length
+                seriesCount: chart.series.length,
+                seriesNames: chart.series.map(s => s.name).join(',')
             })
             const configChanged = chart.lastConfig !== currentConfig
             chart.lastConfig = currentConfig
