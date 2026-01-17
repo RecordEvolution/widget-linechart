@@ -1,5 +1,5 @@
 import { html, css, LitElement, PropertyValueMap } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { customElement, property, query, state } from 'lit/decorators.js'
 
 import * as echarts from 'echarts/core'
 import {
@@ -67,6 +67,8 @@ export class WidgetLinechart extends LitElement {
     @state() private themeBgColor?: string
     @state() private themeTitleColor?: string
     @state() private themeSubtitleColor?: string
+    @query('.chart-container')
+    chartContainer?: HTMLDivElement
 
     boxes?: HTMLDivElement[]
     origWidth: number = 0
@@ -74,7 +76,6 @@ export class WidgetLinechart extends LitElement {
     template: EChartsOption
     modifier: number = 1
     version: string = 'versionplaceholder'
-    chartContainer: HTMLDivElement | null | undefined
     resizeObserver?: ResizeObserver
     updateThresholdMs: number = 300
     private maxIntervalSamples: number = 3
@@ -85,7 +86,7 @@ export class WidgetLinechart extends LitElement {
         this.template = {
             title: {
                 text: 'Temperature Change in the Coming Week',
-                left: 20,
+                left: 'center',
                 top: 0,
                 textStyle: {
                     fontSize: 14
@@ -95,7 +96,7 @@ export class WidgetLinechart extends LitElement {
                 trigger: 'axis'
             },
             legend: {
-                right: '10%',
+                right: 0,
                 top: 0
             },
             grid: {
@@ -201,7 +202,6 @@ export class WidgetLinechart extends LitElement {
     }
 
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-        this.chartContainer = this.shadowRoot?.querySelector('.chart-container')
         this.registerTheme(this.theme)
         this.transformData()
         this.applyData()
@@ -227,13 +227,7 @@ export class WidgetLinechart extends LitElement {
         if (!theme || !theme.theme_object || !theme.theme_name) return
 
         // Filter out component keys that would trigger warnings about unregistered components
-        const excludeKeys = [
-            'parallel',
-            'geo',
-            'timeline',
-            'visualMap',
-            'markPoint'
-        ]
+        const excludeKeys = ['parallel', 'geo', 'timeline', 'visualMap', 'markPoint']
         const filteredTheme = Object.fromEntries(
             Object.entries(theme.theme_object).filter(([key]) => !excludeKeys.includes(key))
         )
@@ -450,13 +444,15 @@ export class WidgetLinechart extends LitElement {
                 xAxisType: this.xAxisType(),
                 yAxisType: this.yAxisType(),
                 seriesCount: chart.series.length,
-                seriesNames: chart.series.map(s => s.name).join(',')
+                seriesNames: chart.series.map((s) => s.name).join(',')
             })
             const configChanged = chart.lastConfig !== currentConfig
             chart.lastConfig = currentConfig
 
             // Use efficient merge for data-only updates, full rebuild for config changes
-            const option: any = configChanged ? window.structuredClone(this.template) : chart.echart?.getOption() ?? window.structuredClone(this.template)
+            const option: any = configChanged
+                ? window.structuredClone(this.template)
+                : (chart.echart?.getOption() ?? window.structuredClone(this.template))
 
             // Title
             option.title.text = label
@@ -480,10 +476,15 @@ export class WidgetLinechart extends LitElement {
             option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
             option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
 
+            const yAxisLabel = this.inputData?.axis?.yAxisLabel ?? ''
+            const hasYAxisLabel = showYAxis && !!yAxisLabel
             option.yAxis.type = this.yAxisType()
-            option.yAxis.name = this.inputData?.axis?.yAxisLabel ?? ''
+            option.yAxis.name = yAxisLabel
             option.yAxis.scale = this.inputData?.axis?.yAxisScaling ?? false
             option.yAxis.show = showYAxis
+            option.yAxis.nameLocation = 'end'
+            option.yAxis.nameGap = 10
+            option.yAxis.axisLine = { show: true }
             if (['value', 'log'].includes(option.yAxis.type))
                 option.yAxis.axisLabel = {
                     'font-size': 14,
@@ -494,13 +495,15 @@ export class WidgetLinechart extends LitElement {
             option.legend.show = showLegend
 
             // Dynamic grid padding based on visible elements
+            // Add extra top space when Y-axis label is shown at 'end' position
+            const topPadding = showTitle ? 30 : hasYAxisLabel ? 30 : 0
             option.grid = {
                 ...option.grid,
                 show: showBox,
                 backgroundColor: 'transparent',
                 borderWidth: showBox ? 1 : 0,
                 borderColor: this.themeTitleColor ?? '#ccc',
-                top: showTitle ? 30 : 0,
+                top: topPadding,
                 bottom: showXAxis ? 20 : 0,
                 left: showYAxis ? 20 : 0,
                 right: 0,

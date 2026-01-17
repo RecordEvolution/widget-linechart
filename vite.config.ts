@@ -6,6 +6,10 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 export default defineConfig({
     server: { open: '/demo/', port: 8000 },
+    resolve: {
+        conditions: ['browser'],
+        alias: { tslib: 'tslib/tslib.es6.js' }
+    },
     optimizeDeps: { exclude: ['echarts', 'tinycolor2'] },
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     plugins: [replace({ versionplaceholder: pkg.version, preventAssignment: true })],

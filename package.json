@@ -4,6 +4,10 @@
     "license": "MIT",
     "author": "widget-linechart",
     "version": "1.6.28",
+    "engines": {
+        "node": ">=24.9.0",
+        "npm": ">=10.0.2"
+    },
     "type": "module",
     "main": "dist/widget-linechart.js",
     "types": "dist/src/widget-linechart.d.ts",
