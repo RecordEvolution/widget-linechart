@@ -48,6 +48,9 @@ export class WidgetLinechart extends LitElement {
     @property({ type: Object })
     theme?: Theme
 
+    @property({ type: Object })
+    timeRange?: { start: number; end: number }
+
     @state()
     private canvasList: Map<
         string,
@@ -463,16 +466,25 @@ export class WidgetLinechart extends LitElement {
             option.xAxis.type = this.xAxisType()
             option.xAxis.show = showXAxis
             if (this.xAxisType() === 'time') {
-                const axisMax = chart.series.map((s) => s.maxDate ?? 0).reduce((a, b) => Math.max(a, b), 0)
-                const axisMin = chart.series
+                // Use provided timeRange if available and valid, otherwise calculate from data
+                const dataMin = chart.series
                     .map((s) => s.minDate ?? Infinity)
                     .reduce((a, b) => Math.min(a, b), Infinity)
+                const dataMax = chart.series.map((s) => s.maxDate ?? 0).reduce((a, b) => Math.max(a, b), 0)
+
+                const timeRangeStart = Number(this.timeRange?.start)
+                const timeRangeEnd = Number(this.timeRange?.end)
+
+                const axisMin = !isNaN(timeRangeStart) ? timeRangeStart : dataMin
+                const axisMax = !isNaN(timeRangeEnd) ? timeRangeEnd : dataMax
+
                 option.xAxis = {
                     ...option.xAxis,
-                    min: axisMin ?? new Date().getTime() - 1 * 24 * 60 * 60 * 1000,
-                    max: axisMax ?? new Date().getTime()
+                    min: axisMin !== Infinity ? axisMin : new Date().getTime() - 1 * 24 * 60 * 60 * 1000,
+                    max: axisMax !== 0 ? axisMax : new Date().getTime()
                 }
             }
+
             option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
             option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
 
@@ -484,6 +496,7 @@ export class WidgetLinechart extends LitElement {
             option.yAxis.show = showYAxis
             option.yAxis.nameLocation = 'end'
             option.yAxis.nameGap = 10
+            option.yAxis.nameTextStyle = { align: 'left' }
             option.yAxis.axisLine = { show: true }
             if (['value', 'log'].includes(option.yAxis.type))
                 option.yAxis.axisLabel = {
@@ -511,7 +524,7 @@ export class WidgetLinechart extends LitElement {
             }
 
             // Calculate animation duration based on update frequency
-            const animationDuration = this.calculateAnimationDuration(chart, label)
+            const animationDuration = this.updateThresholdMs //this.calculateAnimationDuration(chart, label)
             option.animation = true
             option.animationEasing = 'linear'
             option.animationDuration = animationDuration
