@@ -1,25 +1,51 @@
 {
     "title": "inputData",
+    "description": "A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Use this widget for time-series data, trend analysis, comparisons, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.",
     "type": "object",
     "properties": {
-        "title": { "title": "Title", "type": "string", "order": 1 },
-        "subTitle": { "title": "Subtitle", "type": "string", "order": 2 },
+        "title": {
+            "title": "Title",
+            "description": "The main heading displayed above the chart. Use to describe what data is being visualized (e.g., 'Temperature Over Time', 'Sales by Region').",
+            "type": "string",
+            "order": 1
+        },
+        "subTitle": {
+            "title": "Subtitle",
+            "description": "Secondary text displayed below the title. Use for additional context like data source, time period, or measurement units.",
+            "type": "string",
+            "order": 2
+        },
         "axis": {
             "title": "Configuration",
+            "description": "Chart display settings including axes, legend, and layout options.",
             "type": "object",
             "order": 3,
             "properties": {
+                "xAxisLabel": {
+                    "title": "X-Axis Label",
+                    "description": "Label text displayed below the horizontal axis. Describes the x-dimension (e.g., 'Time', 'Date', 'Category').",
+                    "type": "string",
+                    "dataDrivenDisabled": false,
+                    "order": 0
+                },
+                "yAxisLabel": {
+                    "title": "Y-Axis Label",
+                    "description": "Label text displayed beside the vertical axis. Describes the measured values (e.g., 'Temperature (°C)', 'Count', 'Revenue ($)').",
+                    "type": "string",
+                    "dataDrivenDisabled": false,
+                    "order": 1
+                },
                 "showLegend": {
                     "title": "Show Legend",
-                    "description": "Display the chart legend.",
+                    "description": "When enabled, displays a legend identifying each data series by color and label. Essential for multi-series charts.",
                     "type": "boolean",
                     "default": true,
                     "dataDrivenDisabled": true,
-                    "order": 1
+                    "order": 1.1
                 },
                 "showTitle": {
                     "title": "Show Title",
-                    "description": "Display the chart title.",
+                    "description": "When enabled, displays the chart title and subtitle. Disable for compact layouts or when the widget container provides its own title.",
                     "type": "boolean",
                     "default": true,
                     "dataDrivenDisabled": true,
@@ -27,7 +53,7 @@
                 },
                 "showBox": {
                     "title": "Show Box Frame",
-                    "description": "Display a border frame around the chart area.",
+                    "description": "When enabled, draws a border frame around the chart plotting area. Useful for visual separation in dense dashboards.",
                     "type": "boolean",
                     "default": false,
                     "dataDrivenDisabled": true,
@@ -35,28 +61,22 @@
                 },
                 "timeseries": {
                     "title": "Timeseries Chart",
-                    "description": "This will apply a proper time series x-Axis. Check if your x-values are timestamps.",
+                    "description": "When enabled, treats x-axis values as timestamps and applies proper time-based scaling and formatting. Enable when your x-values are dates/times (ISO strings or timestamps). Disable for categorical x-axes.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
                     "order": 4
                 },
                 "columnLayout": {
                     "title": "Vertical Layout",
-                    "description": "When multiple charts are drawn, then they will be layed out horizontically or vertically.",
+                    "description": "When multiple charts are drawn (via chartName grouping), this controls their arrangement. Enabled = stacked vertically, Disabled = arranged horizontally side by side.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
                     "order": 5
                 },
 
-                "xAxisLabel": {
-                    "title": "X-Axis Label",
-                    "type": "string",
-                    "dataDrivenDisabled": false,
-                    "order": 6
-                },
                 "showXAxis": {
                     "title": "Show X-Axis",
-                    "description": "Display the x-axis with labels. When hidden, bottom padding is removed.",
+                    "description": "When enabled, displays the x-axis line, ticks, and labels. Disable to remove bottom axis and its padding for minimal designs.",
                     "type": "boolean",
                     "default": true,
                     "dataDrivenDisabled": true,
@@ -65,20 +85,14 @@
                 "xAxisZoom": {
                     "title": "X-Axis Zoom Tool",
                     "type": "boolean",
-                    "description": "If checked, a zoom tool will be shown on the x-axis to zoom into the chart.",
+                    "description": "When enabled, shows a slider control below the chart for zooming into specific x-axis ranges. Useful for long time series where users need to focus on specific periods.",
                     "dataDrivenDisabled": true,
                     "order": 8
                 },
 
-                "yAxisLabel": {
-                    "title": "Y-Axis Label",
-                    "type": "string",
-                    "dataDrivenDisabled": false,
-                    "order": 9
-                },
                 "showYAxis": {
                     "title": "Show Y-Axis",
-                    "description": "Display the y-axis with labels. When hidden, left padding is removed.",
+                    "description": "When enabled, displays the y-axis line, ticks, and labels. Disable to remove left axis and its padding for minimal designs.",
                     "type": "boolean",
                     "default": true,
                     "dataDrivenDisabled": true,
@@ -86,7 +100,7 @@
                 },
                 "yAxisScaling": {
                     "title": "Y-Axis Scaling",
-                    "description": "If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.",
+                    "description": "When enabled, the y-axis range automatically adjusts to fit the data (min to max). When disabled, the y-axis always starts at 0, which is better for comparing absolute values.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
                     "order": 11
@@ -95,6 +109,7 @@
         },
         "dataseries": {
             "title": "Dataseries",
+            "description": "Array of data series to plot. Each series can have its own chart type (line/bar/scatter), colors, and styling. Multiple series can share an axis or be grouped into separate charts.",
             "type": "array",
             "dataDrivenDisabled": true,
             "order": 4,
@@ -103,13 +118,14 @@
                 "properties": {
                     "label": {
                         "title": "Label",
-                        "description": "The name for this data series",
+                        "description": "Display name for this data series shown in legends and tooltips. Should clearly identify what data this series represents.",
                         "type": "string",
                         "required": true,
                         "order": 1
                     },
                     "type": {
                         "title": "Drawing Style",
+                        "description": "The visual representation type: 'line' for continuous line charts (best for trends), 'bar' for vertical bar charts (best for comparisons), 'scatter' for individual data points (best for correlation analysis).",
                         "type": "string",
                         "enum": ["bar", "line", "scatter"],
                         "required": true,
@@ -118,21 +134,27 @@
                     },
                     "backgroundColor": {
                         "title": "Fill Color",
-                        "description": "The inner color of the bars if you chose Drawing Type 'bar' or the inner colors of the points if you chose Drawing Type 'line'.",
+                        "description": "For bar charts: the bar fill color. For line charts: the data point marker fill color. For scatter: the point fill color. Leave empty to use theme default.",
                         "type": "color",
                         "color": true,
                         "order": 3
                     },
-                    "borderColor": { "title": "Line Color", "type": "color", "color": true, "order": 4 },
+                    "borderColor": {
+                        "title": "Line Color",
+                        "description": "For line charts: the line stroke color. For bar charts: the bar border color. This is the primary color identifying the series.",
+                        "type": "color",
+                        "color": true,
+                        "order": 4
+                    },
                     "styling": {
                         "title": "Styling",
-                        "description": "",
+                        "description": "Additional visual styling options for the series.",
                         "type": "object",
                         "order": 6,
                         "properties": {
                             "fill": {
                                 "title": "Line Area Fill",
-                                "description": "Check this box to turn a line chart into an area chart.",
+                                "description": "When enabled for line charts, fills the area between the line and the x-axis, creating an area chart. Useful for visualizing volume or cumulative values.",
                                 "type": "boolean",
                                 "condition": { "relativePath": "../../type", "showIfValueIn": ["line"] },
                                 "dataDrivenDisabled": true,
@@ -140,14 +162,14 @@
                             },
                             "borderWidth": {
                                 "title": "Line Width",
-                                "description": "Width of the lines in the chart.",
+                                "description": "Thickness of lines in pixels. Larger values make lines more prominent. Typical values: 1-2 for dense charts, 2-4 for emphasis.",
                                 "type": "number",
                                 "dataDrivenDisabled": true,
                                 "order": 2
                             },
                             "borderDash": {
                                 "title": "Line Dash Style",
-                                "description": "",
+                                "description": "Line pattern for line charts: 'solid' for continuous lines, 'dashed' for long dashes, 'dotted' for dots. Use different patterns to distinguish overlapping series.",
                                 "type": "string",
                                 "condition": { "relativePath": "../../type", "showIfValueIn": ["line"] },
                                 "enum": ["solid", "dashed", "dotted"],
@@ -156,6 +178,7 @@
                             },
                             "pointStyle": {
                                 "title": "Symbol Style",
+                                "description": "Shape of data point markers: 'circle', 'rect' (square), 'roundRect', 'triangle', 'diamond', 'pin', 'arrow', or 'none' to hide markers. Different shapes help distinguish series.",
                                 "condition": {
                                     "relativePath": "../../type",
                                     "showIfValueIn": ["line", "scatter"]
@@ -177,20 +200,20 @@
                     },
                     "advanced": {
                         "title": "Advanced Settings",
-                        "description": "",
+                        "description": "Advanced configuration for multi-chart layouts and draw ordering.",
                         "type": "object",
                         "order": 7,
                         "properties": {
                             "drawOrder": {
                                 "title": "Draw Order",
-                                "description": "Determines the draw order of the series. Dataseries with lower numbers are drawn on top of ones with higher numbers within one chart.",
+                                "description": "Z-index controlling which series appears on top when overlapping. Lower numbers are drawn on top. Use to ensure important series aren't hidden behind others.",
                                 "type": "number",
                                 "dataDrivenDisabled": true,
                                 "order": 2
                             },
                             "chartName": {
                                 "title": "Chart Name",
-                                "description": "If two dataseries have the same 'Chart Name', they will be drawn in the same chart. Otherwise they will get their own chart. If the name contains #split# as substring then a separat chart will be drawn for each split dataseries.",
+                                "description": "Groups series into separate charts. Series with the same chartName share one chart; different names create separate charts. Use '#split#' in the name to auto-create one chart per pivot value.",
                                 "type": "string",
                                 "dataDrivenDisabled": true,
                                 "order": 3
@@ -199,7 +222,7 @@
                     },
                     "data": {
                         "title": "Data",
-                        "description": "The data used to draw this data series.",
+                        "description": "Array of data points to plot. Each point has x (position on horizontal axis), y (value), and optionally r (point size) and pivot (for auto-generating series).",
                         "type": "array",
                         "order": 5,
                         "items": {
@@ -207,15 +230,21 @@
                             "properties": {
                                 "x": {
                                     "title": "X-Value",
-                                    "description": "If timeseries is checked in the settings, then this should be an ISO String date like 2023-11-04T22:47:52.351152+00:00. But this works with many other formats as well.",
+                                    "description": "The horizontal axis value. For timeseries charts, use ISO 8601 timestamp strings (e.g., '2023-11-04T22:47:52.351152+00:00') or Unix timestamps. For categorical charts, use category labels.",
                                     "type": "string",
                                     "order": 1,
                                     "required": true
                                 },
-                                "y": { "title": "Y-Value", "type": "string", "order": 2, "required": true },
+                                "y": {
+                                    "title": "Y-Value",
+                                    "description": "The vertical axis value representing the measurement or count at this x position.",
+                                    "type": "string",
+                                    "order": 2,
+                                    "required": true
+                                },
                                 "r": {
                                     "title": "Point Size",
-                                    "description": "Controls the symbol size for line and scatter charts.",
+                                    "description": "Radius/size of the data point marker for line and scatter charts. Use varying sizes to encode a third data dimension (bubble chart effect).",
                                     "condition": {
                                         "relativePath": "../../../type",
                                         "showIfValueIn": ["line", "scatter"]
@@ -225,7 +254,7 @@
                                 },
                                 "pivot": {
                                     "title": "Split Data by",
-                                    "description": "You can specify a column in the input data to autogenerate dataseries for each distinct entry in this column. E.g. if you have a table with columns [city, timestamp, temperature] and specify 'city' as split column, then you will get a line for each city.",
+                                    "description": "Column value used to split this data into multiple series automatically. Each unique pivot value creates a separate line/bar series (e.g., pivot by 'city' to get one line per city).",
                                     "order": 4,
                                     "type": "string"
                                 }
