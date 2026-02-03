@@ -5,84 +5,108 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * The main heading displayed above the chart. Use to describe what data is being visualized (e.g., 'Temperature Over Time', 'Sales by Region').
+ */
 export type Title = string;
+/**
+ * Secondary text displayed below the title. Use for additional context like data source, time period, or measurement units.
+ */
 export type Subtitle = string;
 /**
- * Display the chart legend.
+ * Label text displayed below the horizontal axis. Describes the x-dimension (e.g., 'Time', 'Date', 'Category').
+ */
+export type XAxisLabel = string;
+/**
+ * Label text displayed beside the vertical axis. Describes the measured values (e.g., 'Temperature (°C)', 'Count', 'Revenue ($)').
+ */
+export type YAxisLabel = string;
+/**
+ * When enabled, displays a legend identifying each data series by color and label. Essential for multi-series charts.
  */
 export type ShowLegend = boolean;
 /**
- * Display the chart title.
+ * When enabled, displays the chart title and subtitle. Disable for compact layouts or when the widget container provides its own title.
  */
 export type ShowTitle = boolean;
 /**
- * Display a border frame around the chart area.
+ * When enabled, draws a border frame around the chart plotting area. Useful for visual separation in dense dashboards.
  */
 export type ShowBoxFrame = boolean;
 /**
- * This will apply a proper time series x-Axis. Check if your x-values are timestamps.
+ * When enabled, treats x-axis values as timestamps and applies proper time-based scaling and formatting. Enable when your x-values are dates/times (ISO strings or timestamps). Disable for categorical x-axes.
  */
 export type TimeseriesChart = boolean;
 /**
- * When multiple charts are drawn, then they will be layed out horizontically or vertically.
+ * When multiple charts are drawn (via chartName grouping), this controls their arrangement. Enabled = stacked vertically, Disabled = arranged horizontally side by side.
  */
 export type VerticalLayout = boolean;
-export type XAxisLabel = string;
 /**
- * Display the x-axis with labels. When hidden, bottom padding is removed.
+ * When enabled, displays the x-axis line, ticks, and labels. Disable to remove bottom axis and its padding for minimal designs.
  */
 export type ShowXAxis = boolean;
 /**
- * If checked, a zoom tool will be shown on the x-axis to zoom into the chart.
+ * When enabled, shows a slider control below the chart for zooming into specific x-axis ranges. Useful for long time series where users need to focus on specific periods.
  */
 export type XAxisZoomTool = boolean;
-export type YAxisLabel = string;
 /**
- * Display the y-axis with labels. When hidden, left padding is removed.
+ * When enabled, displays the y-axis line, ticks, and labels. Disable to remove left axis and its padding for minimal designs.
  */
 export type ShowYAxis = boolean;
 /**
- * If checked, the Y-Axis will be scaled to the data range. If not checked, the Y-Axis will always start at 0.
+ * When enabled, the y-axis range automatically adjusts to fit the data (min to max). When disabled, the y-axis always starts at 0, which is better for comparing absolute values.
  */
 export type YAxisScaling = boolean;
 /**
- * The name for this data series
+ * Display name for this data series shown in legends and tooltips. Should clearly identify what data this series represents.
  */
 export type Label = string;
+/**
+ * The visual representation type: 'line' for continuous line charts (best for trends), 'bar' for vertical bar charts (best for comparisons), 'scatter' for individual data points (best for correlation analysis).
+ */
 export type DrawingStyle = "bar" | "line" | "scatter";
 /**
- * Check this box to turn a line chart into an area chart.
+ * When enabled for line charts, fills the area between the line and the x-axis, creating an area chart. Useful for visualizing volume or cumulative values.
  */
 export type LineAreaFill = boolean;
 /**
- * Width of the lines in the chart.
+ * Thickness of lines in pixels. Larger values make lines more prominent. Typical values: 1-2 for dense charts, 2-4 for emphasis.
  */
 export type LineWidth = number;
+/**
+ * Line pattern for line charts: 'solid' for continuous lines, 'dashed' for long dashes, 'dotted' for dots. Use different patterns to distinguish overlapping series.
+ */
 export type LineDashStyle = "solid" | "dashed" | "dotted";
+/**
+ * Shape of data point markers: 'circle', 'rect' (square), 'roundRect', 'triangle', 'diamond', 'pin', 'arrow', or 'none' to hide markers. Different shapes help distinguish series.
+ */
 export type SymbolStyle = "circle" | "rect" | "roundRect" | "triangle" | "diamond" | "pin" | "arrow" | "none";
 /**
- * Determines the draw order of the series. Dataseries with lower numbers are drawn on top of ones with higher numbers within one chart.
+ * Z-index controlling which series appears on top when overlapping. Lower numbers are drawn on top. Use to ensure important series aren't hidden behind others.
  */
 export type DrawOrder = number;
 /**
- * If two dataseries have the same 'Chart Name', they will be drawn in the same chart. Otherwise they will get their own chart. If the name contains #split# as substring then a separat chart will be drawn for each split dataseries.
+ * Groups series into separate charts. Series with the same chartName share one chart; different names create separate charts. Use '#split#' in the name to auto-create one chart per pivot value.
  */
 export type ChartName = string;
 /**
- * If timeseries is checked in the settings, then this should be an ISO String date like 2023-11-04T22:47:52.351152+00:00. But this works with many other formats as well.
+ * The horizontal axis value. For timeseries charts, use ISO 8601 timestamp strings (e.g., '2023-11-04T22:47:52.351152+00:00') or Unix timestamps. For categorical charts, use category labels.
  */
 export type XValue = string;
+/**
+ * The vertical axis value representing the measurement or count at this x position.
+ */
 export type YValue = string;
 /**
- * Controls the symbol size for line and scatter charts.
+ * Radius/size of the data point marker for line and scatter charts. Use varying sizes to encode a third data dimension (bubble chart effect).
  */
 export type PointSize = number;
 /**
- * You can specify a column in the input data to autogenerate dataseries for each distinct entry in this column. E.g. if you have a table with columns [city, timestamp, temperature] and specify 'city' as split column, then you will get a line for each city.
+ * Column value used to split this data into multiple series automatically. Each unique pivot value creates a separate line/bar series (e.g., pivot by 'city' to get one line per city).
  */
 export type SplitDataBy = string;
 /**
- * The data used to draw this data series.
+ * Array of data points to plot. Each point has x (position on horizontal axis), y (value), and optionally r (point size) and pivot (for auto-generating series).
  */
 export type Data = {
     x?: XValue;
@@ -91,6 +115,9 @@ export type Data = {
     pivot?: SplitDataBy;
     [k: string]: unknown;
 }[];
+/**
+ * Array of data series to plot. Each series can have its own chart type (line/bar/scatter), colors, and styling. Multiple series can share an axis or be grouped into separate charts.
+ */
 export type Dataseries = {
     label?: Label;
     type?: DrawingStyle;
@@ -102,6 +129,9 @@ export type Dataseries = {
     [k: string]: unknown;
 }[];
 
+/**
+ * A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Use this widget for time-series data, trend analysis, comparisons, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.
+ */
 export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
@@ -109,29 +139,38 @@ export interface InputData {
     dataseries?: Dataseries;
     [k: string]: unknown;
 }
+/**
+ * Chart display settings including axes, legend, and layout options.
+ */
 export interface Configuration {
+    xAxisLabel?: XAxisLabel;
+    yAxisLabel?: YAxisLabel;
     showLegend?: ShowLegend;
     showTitle?: ShowTitle;
     showBox?: ShowBoxFrame;
     timeseries?: TimeseriesChart;
     columnLayout?: VerticalLayout;
-    xAxisLabel?: XAxisLabel;
     showXAxis?: ShowXAxis;
     xAxisZoom?: XAxisZoomTool;
-    yAxisLabel?: YAxisLabel;
     showYAxis?: ShowYAxis;
     yAxisScaling?: YAxisScaling;
     [k: string]: unknown;
 }
 /**
- * The inner color of the bars if you chose Drawing Type 'bar' or the inner colors of the points if you chose Drawing Type 'line'.
+ * For bar charts: the bar fill color. For line charts: the data point marker fill color. For scatter: the point fill color. Leave empty to use theme default.
  */
 export interface FillColor {
     [k: string]: unknown;
 }
+/**
+ * For line charts: the line stroke color. For bar charts: the bar border color. This is the primary color identifying the series.
+ */
 export interface LineColor {
     [k: string]: unknown;
 }
+/**
+ * Additional visual styling options for the series.
+ */
 export interface Styling {
     fill?: LineAreaFill;
     borderWidth?: LineWidth;
@@ -139,6 +178,9 @@ export interface Styling {
     pointStyle?: SymbolStyle;
     [k: string]: unknown;
 }
+/**
+ * Advanced configuration for multi-chart layouts and draw ordering.
+ */
 export interface AdvancedSettings {
     drawOrder?: DrawOrder;
     chartName?: ChartName;
