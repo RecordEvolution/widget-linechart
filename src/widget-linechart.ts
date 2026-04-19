@@ -311,7 +311,7 @@ export class WidgetLinechart extends LitElement {
                     },
                     areaStyle: ds.styling?.fill ? { color: fillColor } : undefined,
                     symbol: ds.styling?.pointStyle ?? 'circle',
-                    symbolSize: (d: any[]) => d[2] ?? 4,
+                    symbolSize: (d: any[]) => d[2] ?? 0,
                     showSymbol: ds.styling?.pointStyle === 'none' ? false : true,
                     data: data2 ?? [],
                     drawOrder: ds.advanced?.drawOrder ?? 0
@@ -320,6 +320,16 @@ export class WidgetLinechart extends LitElement {
                 chartName = chartName.replace('#split#', prefix)
 
                 const chart = this.setupChart(chartName)
+
+                // Ensure unique id per chart (ECharts requires unique ids)
+                const existingIds = chart?.series.map((s) => s.id) ?? []
+                let seriesId = name
+                let suffix = 2
+                while (existingIds.includes(seriesId)) {
+                    seriesId = `${name}_${suffix++}`
+                }
+                pds.id = seriesId
+
                 chart?.series.push(pds)
             })
         })

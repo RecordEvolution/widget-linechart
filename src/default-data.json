@@ -39,7 +39,7 @@
         {
             "label": "Demo Line",
             "type": "line",
-            "styling": { "fill": false, "borderWidth": 2, "borderDash": "dashed", "pointStyle": "circle" },
+            "styling": { "fill": false, "borderWidth": 1, "borderDash": "solid", "pointStyle": "circle" },
 
             "advanced": { "drawOrder": 3 },
             "data": [
