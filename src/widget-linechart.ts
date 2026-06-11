@@ -185,6 +185,10 @@ export class WidgetLinechart extends LitElement {
     }
 
     update(changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+        if (changedProperties.has('inputData')) {
+            this.cachedXAxisType = undefined
+            this.cachedYAxisType = undefined
+        }
         if (changedProperties.has('inputData') && this.chartContainer) {
             // const drawingStates = Array.from(this.canvasList).map(([key, chart]) => chart.drawing)
             // if (drawingStates.every((d) => !d)) {
@@ -363,17 +367,38 @@ export class WidgetLinechart extends LitElement {
         }
     }
 
+    // cached per inputData change — cleared in update(), see xAxisType()/yAxisType()
+    private cachedXAxisType?: 'value' | 'category' | 'time'
+    private cachedYAxisType?: 'value' | 'category'
+
     xAxisType(): 'value' | 'log' | 'category' | 'time' | undefined {
-        if (this.inputData?.axis?.timeseries) return 'time'
-        const onePoint = this.inputData?.dataseries?.[0]?.data?.[0]
-        if (!isNaN(Number(onePoint?.x))) return 'value'
-        return 'category'
+        if (this.cachedXAxisType) return this.cachedXAxisType
+        if (this.inputData?.axis?.timeseries) {
+            this.cachedXAxisType = 'time'
+            return this.cachedXAxisType
+        }
+        this.cachedXAxisType = 'value'
+        for (const ds of this.inputData?.dataseries ?? []) {
+            const point = ds.data?.find((d) => d.x !== undefined && d.x !== null)
+            if (point) {
+                this.cachedXAxisType = !isNaN(Number(point.x)) ? 'value' : 'category'
+                break
+            }
+        }
+        return this.cachedXAxisType
     }
 
     yAxisType(): 'value' | 'log' | 'category' | undefined {
-        const onePoint = this.inputData?.dataseries?.[0]?.data?.[0]
-        if (!isNaN(Number(onePoint?.y))) return 'value'
-        return 'category'
+        if (this.cachedYAxisType) return this.cachedYAxisType
+        this.cachedYAxisType = 'value'
+        for (const ds of this.inputData?.dataseries ?? []) {
+            const point = ds.data?.find((d) => d.y !== undefined && d.y !== null)
+            if (point) {
+                this.cachedYAxisType = !isNaN(Number(point.y)) ? 'value' : 'category'
+                break
+            }
+        }
+        return this.cachedYAxisType
     }
 
     calculateAnimationDuration(chart: any, label: string): number {
