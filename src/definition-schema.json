@@ -35,6 +35,13 @@
                     "dataDrivenDisabled": false,
                     "order": 1
                 },
+                "yAxisLabelRight": {
+                    "title": "Right Y-Axis Label",
+                    "description": "Label text displayed at the top of the secondary vertical axis on the right side of the chart. Describes the values measured on the right axis (e.g., 'Pressure (bar)', 'Humidity (%)'). The right y-axis only appears when at least one data series has its 'Y-Axis Assignment' (dataseries[].yAxis) set to 'right'; this label is ignored otherwise.",
+                    "type": "string",
+                    "dataDrivenDisabled": false,
+                    "order": 1.05
+                },
                 "showLegend": {
                     "title": "Show Legend",
                     "description": "When enabled, displays a legend identifying each data series by color and label. Essential for multi-series charts.",
@@ -104,6 +111,13 @@
                     "type": "boolean",
                     "dataDrivenDisabled": true,
                     "order": 11
+                },
+                "yAxisScalingRight": {
+                    "title": "Right Y-Axis Scaling",
+                    "description": "When enabled, the right y-axis range automatically adjusts to fit its assigned series (min to max). When disabled (the default), the right y-axis always starts at 0, which is better for comparing absolute values. This setting is independent of the left axis 'Y-Axis Scaling' and only has an effect when at least one data series is assigned to the right axis.",
+                    "type": "boolean",
+                    "dataDrivenDisabled": true,
+                    "order": 11.1
                 }
             }
         },
@@ -145,6 +159,15 @@
                         "type": "color",
                         "color": true,
                         "order": 4
+                    },
+                    "yAxis": {
+                        "title": "Y-Axis Assignment",
+                        "description": "Selects which vertical axis this series is plotted against: 'left' (the default) uses the primary y-axis on the left side of the chart, 'right' uses a secondary y-axis on the right side with its own independent scale. Assign 'right' to series whose value range differs strongly from the other series (e.g., temperature 0-40 °C on the left and pressure 900-1100 hPa on the right) so each group remains readable. The right axis appears automatically as soon as one series in a chart is set to 'right' and is labeled/scaled via the global 'Right Y-Axis Label' and 'Right Y-Axis Scaling' settings. Note: all series in one chart share a single inferred axis data type (numeric or categorical), so do not mix numeric and categorical y-values across the two axes.",
+                        "type": "string",
+                        "enum": ["left", "right"],
+                        "default": "left",
+                        "dataDrivenDisabled": true,
+                        "order": 4.5
                     },
                     "styling": {
                         "title": "Styling",

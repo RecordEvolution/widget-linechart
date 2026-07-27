@@ -39,7 +39,12 @@ type Theme = {
     theme_object: any
 }
 
-type SeriesOptionX = SeriesOption & { minDate?: number; maxDate?: number; drawOrder: number }
+type SeriesOptionX = SeriesOption & {
+    minDate?: number
+    maxDate?: number
+    drawOrder: number
+    yAxisIndex?: number
+}
 @customElement('widget-linechart-versionplaceholder')
 export class WidgetLinechart extends LitElement {
     @property({ type: Object })
@@ -143,21 +148,45 @@ export class WidgetLinechart extends LitElement {
                     fontSize: 14
                 }
             },
-            yAxis: {
-                type: 'value',
-                nameLocation: 'middle',
-                name: 'Temperature (°C)',
-                nameGap: 30,
-                axisLabel: {
-                    fontSize: 14
+            // index 0 = left (primary) axis, index 1 = right (secondary) axis.
+            // Must stay function-free: the template is copied via structuredClone.
+            yAxis: [
+                {
+                    type: 'value',
+                    nameLocation: 'middle',
+                    name: 'Temperature (°C)',
+                    nameGap: 30,
+                    position: 'left',
+                    axisLabel: {
+                        fontSize: 14
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            width: undefined
+                        }
+                    },
+                    scale: false
                 },
-                axisLine: {
-                    lineStyle: {
-                        width: undefined
-                    }
-                },
-                scale: false
-            },
+                {
+                    type: 'value',
+                    position: 'right',
+                    show: false,
+                    name: '',
+                    nameGap: 30,
+                    axisLabel: {
+                        fontSize: 14
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            width: undefined
+                        }
+                    },
+                    splitLine: {
+                        show: false
+                    },
+                    scale: false
+                }
+            ],
             series: [
                 {
                     name: 'Highest',
@@ -318,7 +347,8 @@ export class WidgetLinechart extends LitElement {
                     symbolSize: (d: any[]) => d[2] ?? 0,
                     showSymbol: ds.styling?.pointStyle === 'none' ? false : true,
                     data: data2 ?? [],
-                    drawOrder: ds.advanced?.drawOrder ?? 0
+                    drawOrder: ds.advanced?.drawOrder ?? 0,
+                    yAxisIndex: ds.yAxis === 'right' ? 1 : 0
                 }
                 let chartName = ds.advanced?.chartName ?? ''
                 chartName = chartName.replace('#split#', prefix)
@@ -479,10 +509,13 @@ export class WidgetLinechart extends LitElement {
                 yAxisLabel: this.inputData?.axis?.yAxisLabel,
                 xAxisZoom: this.inputData?.axis?.xAxisZoom,
                 yAxisScaling: this.inputData?.axis?.yAxisScaling,
+                yAxisLabelRight: this.inputData?.axis?.yAxisLabelRight,
+                yAxisScalingRight: this.inputData?.axis?.yAxisScalingRight,
                 xAxisType: this.xAxisType(),
                 yAxisType: this.yAxisType(),
                 seriesCount: chart.series.length,
-                seriesNames: chart.series.map((s) => s.name).join(',')
+                seriesNames: chart.series.map((s) => s.name).join(','),
+                seriesAxes: chart.series.map((s) => s.yAxisIndex ?? 0).join(',')
             })
             const configChanged = chart.lastConfig !== currentConfig
             chart.lastConfig = currentConfig
@@ -523,28 +556,66 @@ export class WidgetLinechart extends LitElement {
             option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
             option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
 
+            // Y axes: index 0 = left (primary), index 1 = right (secondary).
+            // The template holds an array, but getOption() (merge path) also returns
+            // component options normalized to arrays — handle both shapes.
+            const yAxes: any[] = Array.isArray(option.yAxis) ? option.yAxis : [option.yAxis ?? {}]
+            while (yAxes.length < 2) yAxes.push({})
+            option.yAxis = yAxes
+
+            const rightAxisUsed = chart.series.some((s) => (s.yAxisIndex ?? 0) === 1)
+            const leftAxisUsed =
+                chart.series.length === 0 || chart.series.some((s) => (s.yAxisIndex ?? 0) === 0)
+            const showLeftAxis = showYAxis && leftAxisUsed
+            const showRightAxis = showYAxis && rightAxisUsed
+
             const yAxisLabel = this.inputData?.axis?.yAxisLabel ?? ''
-            const hasYAxisLabel = showYAxis && !!yAxisLabel
-            option.yAxis.type = this.yAxisType()
-            option.yAxis.name = yAxisLabel
-            option.yAxis.scale = this.inputData?.axis?.yAxisScaling ?? false
-            option.yAxis.show = showYAxis
-            option.yAxis.nameLocation = 'end'
-            option.yAxis.nameGap = 10
-            option.yAxis.nameTextStyle = { align: 'left' }
-            option.yAxis.axisLine = { show: true }
-            if (['value', 'log'].includes(option.yAxis.type))
-                option.yAxis.axisLabel = {
-                    'font-size': 14,
-                    formatter: (value: number) => Math.round(value * 100) / 100
-                }
+            const yAxisLabelRight = this.inputData?.axis?.yAxisLabelRight ?? ''
+            const hasYAxisLabel = showLeftAxis && !!yAxisLabel
+            const hasYAxisLabelRight = showRightAxis && !!yAxisLabelRight
+
+            const yType = this.yAxisType()
+            const numericAxisLabel = ['value', 'log'].includes(yType ?? '')
+                ? { fontSize: 14, formatter: (value: number) => Math.round(value * 100) / 100 }
+                : undefined
+
+            Object.assign(yAxes[0], {
+                type: yType,
+                name: yAxisLabel,
+                scale: this.inputData?.axis?.yAxisScaling ?? false,
+                show: showLeftAxis,
+                position: 'left',
+                nameLocation: 'end',
+                nameGap: 10,
+                nameTextStyle: { align: 'left' },
+                axisLine: { show: true }
+            })
+            if (numericAxisLabel) yAxes[0].axisLabel = numericAxisLabel
+
+            Object.assign(yAxes[1], {
+                type: yType,
+                name: showRightAxis ? yAxisLabelRight : '',
+                scale: this.inputData?.axis?.yAxisScalingRight ?? false,
+                show: showRightAxis,
+                position: 'right',
+                nameLocation: 'end',
+                nameGap: 10,
+                nameTextStyle: { align: 'right' },
+                axisLine: { show: true },
+                splitLine: { show: false }
+            })
+            if (numericAxisLabel) yAxes[1].axisLabel = numericAxisLabel
 
             option.series = chart.series
             option.legend.show = showLegend
 
             // Dynamic grid padding based on visible elements
-            // Add extra top space when Y-axis label is shown at 'end' position
-            const topPadding = showTitle ? 30 : hasYAxisLabel ? 30 : 0
+            // Add extra top space when Y-axis label is shown at 'end' position.
+            // The right axis name and the legend both live in the top-right corner,
+            // so reserve an extra row when both are visible.
+            const topPadding =
+                (showTitle || hasYAxisLabel || hasYAxisLabelRight ? 30 : 0) +
+                (showLegend && hasYAxisLabelRight ? 25 : 0)
             option.grid = {
                 ...option.grid,
                 show: showBox,
@@ -553,7 +624,7 @@ export class WidgetLinechart extends LitElement {
                 borderColor: this.themeTitleColor ?? '#ccc',
                 top: topPadding,
                 bottom: showXAxis ? 20 : 0,
-                left: showYAxis ? 20 : 0,
+                left: showLeftAxis ? 20 : 0,
                 right: 0,
                 containLabel: showXAxis || showYAxis
             }

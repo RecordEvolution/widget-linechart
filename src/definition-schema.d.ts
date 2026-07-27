@@ -22,6 +22,10 @@ export type XAxisLabel = string;
  */
 export type YAxisLabel = string;
 /**
+ * Label text displayed at the top of the secondary vertical axis on the right side of the chart. Describes the values measured on the right axis (e.g., 'Pressure (bar)', 'Humidity (%)'). The right y-axis only appears when at least one data series has its 'Y-Axis Assignment' (dataseries[].yAxis) set to 'right'; this label is ignored otherwise.
+ */
+export type RightYAxisLabel = string;
+/**
  * When enabled, displays a legend identifying each data series by color and label. Essential for multi-series charts.
  */
 export type ShowLegend = boolean;
@@ -58,6 +62,10 @@ export type ShowYAxis = boolean;
  */
 export type YAxisScaling = boolean;
 /**
+ * When enabled, the right y-axis range automatically adjusts to fit its assigned series (min to max). When disabled (the default), the right y-axis always starts at 0, which is better for comparing absolute values. This setting is independent of the left axis 'Y-Axis Scaling' and only has an effect when at least one data series is assigned to the right axis.
+ */
+export type RightYAxisScaling = boolean;
+/**
  * Display name for this data series shown in legends and tooltips. Should clearly identify what data this series represents.
  */
 export type Label = string;
@@ -65,6 +73,10 @@ export type Label = string;
  * The visual representation type: 'line' for continuous line charts (best for trends), 'bar' for vertical bar charts (best for comparisons), 'scatter' for individual data points (best for correlation analysis).
  */
 export type DrawingStyle = "bar" | "line" | "scatter";
+/**
+ * Selects which vertical axis this series is plotted against: 'left' (the default) uses the primary y-axis on the left side of the chart, 'right' uses a secondary y-axis on the right side with its own independent scale. Assign 'right' to series whose value range differs strongly from the other series (e.g., temperature 0-40 °C on the left and pressure 900-1100 hPa on the right) so each group remains readable. The right axis appears automatically as soon as one series in a chart is set to 'right' and is labeled/scaled via the global 'Right Y-Axis Label' and 'Right Y-Axis Scaling' settings. Note: all series in one chart share a single inferred axis data type (numeric or categorical), so do not mix numeric and categorical y-values across the two axes.
+ */
+export type YAxisAssignment = "left" | "right";
 /**
  * When enabled for line charts, fills the area between the line and the x-axis, creating an area chart. Useful for visualizing volume or cumulative values.
  */
@@ -123,6 +135,7 @@ export type Dataseries = {
     type?: DrawingStyle;
     backgroundColor?: FillColor;
     borderColor?: LineColor;
+    yAxis?: YAxisAssignment;
     styling?: Styling;
     advanced?: AdvancedSettings;
     data?: Data;
@@ -145,6 +158,7 @@ export interface InputData {
 export interface Configuration {
     xAxisLabel?: XAxisLabel;
     yAxisLabel?: YAxisLabel;
+    yAxisLabelRight?: RightYAxisLabel;
     showLegend?: ShowLegend;
     showTitle?: ShowTitle;
     showBox?: ShowBoxFrame;
@@ -154,6 +168,7 @@ export interface Configuration {
     xAxisZoom?: XAxisZoomTool;
     showYAxis?: ShowYAxis;
     yAxisScaling?: YAxisScaling;
+    yAxisScalingRight?: RightYAxisScaling;
     [k: string]: unknown;
 }
 /**

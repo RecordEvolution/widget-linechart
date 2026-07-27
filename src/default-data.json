@@ -9,7 +9,9 @@
         "xAxisLabel": "Time",
         "xAxisZoom": false,
         "yAxisLabel": "Temperature",
+        "yAxisLabelRight": "Units Produced",
         "yAxisScaling": false,
+        "yAxisScalingRight": false,
         "columnLayout": true
     },
     "dataseries": [
@@ -28,12 +30,13 @@
             "label": "Demo Bar",
             "type": "bar",
             "styling": { "borderWidth": 2, "pointStyle": "circle", "fill": false },
+            "yAxis": "right",
             "advanced": { "drawOrder": 2 },
             "data": [
-                { "x": "2023-11-04T22:47:52.351152+00:00", "y": 28 },
-                { "x": "2023-11-05T22:47:52.351152+00:00", "y": 10 },
-                { "x": "2023-11-07T22:47:52.351152+00:00", "y": 59 },
-                { "x": "2023-11-10T22:47:52.351152+00:00", "y": 42 }
+                { "x": "2023-11-04T22:47:52.351152+00:00", "y": 2800 },
+                { "x": "2023-11-05T22:47:52.351152+00:00", "y": 1000 },
+                { "x": "2023-11-07T22:47:52.351152+00:00", "y": 5900 },
+                { "x": "2023-11-10T22:47:52.351152+00:00", "y": 4200 }
             ]
         },
         {
