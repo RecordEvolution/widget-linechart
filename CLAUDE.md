@@ -37,12 +37,31 @@ The IronFlock dashboard auto-generates the widget's configuration UI from `src/d
 
 1. Edit `definition-schema.json` (custom keywords beyond JSON Schema: `"type": "color"` for color pickers, `"order": N` for field ordering, `"dataDrivenDisabled": true` to forbid IoT data binding, `"condition"` for conditional visibility).
 2. Run `npm run types` to regenerate `src/definition-schema.d.ts`.
-3. Import the generated `InputData` type in `widget-linechart.ts`.
+3. Import the generated root type in `widget-linechart.ts`. Its name is derived from the schema's root `title` — `"Chart Configuration"` yields `ChartConfiguration` — so renaming the root title renames the exported interface.
+
+#### `aiSelection` — widget-catalog routing hints
+
+The schema root carries an `aiSelection` block. It is *not* JSON Schema and describes no config field; it exists so the IronFlock AI's Widget Builder can pick the right widget for a given shape of data, using knowledge only the widget author has. It is inert everywhere else: `json2ts` ignores it (the generated `.d.ts` is byte-identical with and without it), the dashboard config editor renders only `schema.properties`, and the AI service's `validate_widget` validates configs against the schema — unknown Draft-7 keywords are skipped.
+
+```jsonc
+"aiSelection": {
+  "dataShape": "…what columns this widget consumes and what each one means…",
+  "useWhen":   ["…a situation, naming the properties that express it…"],
+  "notFor":    ["…a situation this widget is wrong for, naming the widget to use instead…"]
+}
+```
+
+Rules of thumb when maintaining it:
+
+- `notFor` is the high-value half and the part plain descriptions always omit. Every entry should name the widget that *should* be used, otherwise it rejects without routing.
+- Write for an LLM that has no other documentation: describe the visible result and the user's intent, not the implementation.
+- Prefer entries that discriminate against a *neighbouring* widget. "Not for free text" is cheap; "state durations over time belong in widget-statehistory, not a bar chart" is what prevents a wrong pick.
+- Keep it in sync when a property changes what the chart can do — `axis.orientation` and `dataseries[].type` are both referenced from `useWhen`.
 
 ### Component API (universal across all widget-* repos)
 
 ```ts
-@property({ type: Object }) inputData?: InputData                              // shape from schema
+@property({ type: Object }) inputData?: ChartConfiguration                     // shape from schema
 @property({ type: Object }) theme?: { theme_name: string; theme_object: any }  // ECharts theme
 @property({ type: Object }) timeRange?: { start: number; end: number }
 ```
@@ -69,6 +88,9 @@ CDN/import-map consumers must polyfill `window.process = { env: { NODE_ENV: 'pro
 
 - `dataseries[].type`: `line` | `bar` | `scatter`.
 - `axis.timeseries: true` switches the x-axis to date parsing.
+- `axis.orientation`: `vertical` (default) | `horizontal`. Horizontal swaps which option key holds the category axis and which holds the two-entry value-axis array, inverts the category axis so the first point is on top, and stores data points as `[y, x, r]` instead of `[x, y, r]` (ECharts always maps tuple index 0 to the x axis). `axis.xAxisLabel`/`yAxisLabel` keep naming the x-value and y-value dimensions in both orientations. Changing it forces a `notMerge` rebuild via the config fingerprint.
+- `axis.xAxisZoom` shows an ECharts slider `dataZoom`. The slider is ~30px thick and sits **outside** the grid's `containLabel` bookkeeping, so `applyData()` reserves `ZOOM_THICKNESS` of grid padding for it — at the bottom when vertical, on the right when horizontal — and anchors it to that edge. Without the reservation the slider is drawn over the plot, clipping the foot of every bar.
+- `dataseries[].styling.showValueLabels` prints each point's y-value on the chart (`series.label`), positioned `top` when vertical and `right` when horizontal, rounded to two decimals to match the numeric axis labels.
 - `advanced.chartName` groups series into separate ECharts instances; the literal `#split#` in the name auto-creates one chart per pivot value.
 - `data[].pivot` auto-generates one series per distinct pivot value (e.g. one line per city).
 - `advanced.drawOrder` controls z-index layering within a chart.
@@ -76,7 +98,9 @@ CDN/import-map consumers must polyfill `window.process = { env: { NODE_ENV: 'pro
 
 ## Demo / dev harness
 
-`demo/index.html` is the only test harness. It contains a `keyPathsToRandomize` array used to mutate specific data paths every second (e.g. `'dataseries.0.data.2.y'`) — handy for verifying live updates and animation behavior.
+`demo/index.html` is the live-update harness; `demo/verify.html` renders a fixed grid of configurations (vertical/horizontal, with and without value labels, single and dual value axis) side by side for visual regression checks, and `demo/verify-zoom.html` covers zoom-slider placement (bar/line/horizontal, short and long legends). Neither is published — `package.json`'s `files` list covers only `dist`, `src` and the thumbnails.
+
+`demo/index.html` It contains a `keyPathsToRandomize` array used to mutate specific data paths every second (e.g. `'dataseries.0.data.2.y'`) — handy for verifying live updates and animation behavior.
 
 ## Platform registration after release
 

@@ -42,9 +42,13 @@ export type ShowBoxFrame = boolean;
  */
 export type TimeseriesChart = boolean;
 /**
- * When multiple charts are drawn (via chartName grouping), this controls their arrangement. Enabled = stacked vertically, Disabled = arranged horizontally side by side.
+ * The direction in which bars grow and the chart is read. 'vertical' (the default) places the x-values (categories or timestamps) along the horizontal axis at the bottom and the measured y-values along the vertical axis, so bars grow upwards. 'horizontal' swaps the two axes: the x-values run down the left-hand vertical axis, first data point at the top, and the y-values grow to the right, producing a horizontal bar chart. Choose 'horizontal' for ranked or frequency charts, and whenever category names are long enough to be unreadable when squeezed under a vertical axis. This setting affects only the drawing direction, not the meaning of the other options: 'X-Axis Label' always names the x-value dimension and 'Y-Axis Label' always names the measured values, whichever side of the chart they end up on. Applies to all series in the chart, including line and scatter series.
  */
-export type VerticalLayout = boolean;
+export type BarDirection = "vertical" | "horizontal";
+/**
+ * Controls how SEPARATE charts are arranged relative to each other when the series are grouped into more than one chart via 'Chart Name' (dataseries[].advanced.chartName). Enabled = the charts are stacked one above the other, Disabled = the charts sit side by side. This is a page-layout option and has no effect on a single chart; to change the direction bars grow in, use 'Bar Direction' (axis.orientation) instead.
+ */
+export type StackMultipleChartsVertically = boolean;
 /**
  * When enabled, displays the x-axis line, ticks, and labels. Disable to remove bottom axis and its padding for minimal designs.
  */
@@ -93,6 +97,10 @@ export type LineDashStyle = "solid" | "dashed" | "dotted";
  * Shape of data point markers: 'circle', 'rect' (square), 'roundRect', 'triangle', 'diamond', 'pin', 'arrow', or 'none' to hide markers. Different shapes help distinguish series.
  */
 export type SymbolStyle = "circle" | "rect" | "roundRect" | "triangle" | "diamond" | "pin" | "arrow" | "none";
+/**
+ * When enabled, each data point's y-value is printed as text directly on the chart: above the top of every bar in a vertical bar chart, just past the end of the bar in a horizontal one, and above the marker for line and scatter series. Enable this whenever the reader is meant to read exact numbers off the chart rather than estimate them against the axis — the usual expectation for bar charts of counts, totals or frequencies, and the setting to use when someone asks for the values to be shown on or above the bars. Numbers are rounded to two decimal places; non-numeric values are printed unchanged. Leave it disabled for charts with many data points, where the labels would overlap each other.
+ */
+export type ShowValueLabels = boolean;
 /**
  * Z-index controlling which series appears on top when overlapping. Lower numbers are drawn on top. Use to ensure important series aren't hidden behind others.
  */
@@ -143,9 +151,9 @@ export type Dataseries = {
 }[];
 
 /**
- * A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Use this widget for time-series data, trend analysis, comparisons, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.
+ * A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Despite the package name, this is also THE bar chart widget: set dataseries[].type to 'bar' for vertical bars and axis.orientation to 'horizontal' for horizontal ones. Use this widget for time-series data, trend analysis, comparisons, frequency distributions, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.
  */
-export interface InputData {
+export interface ChartConfiguration {
     title?: Title;
     subTitle?: Subtitle;
     axis?: Configuration;
@@ -163,7 +171,8 @@ export interface Configuration {
     showTitle?: ShowTitle;
     showBox?: ShowBoxFrame;
     timeseries?: TimeseriesChart;
-    columnLayout?: VerticalLayout;
+    orientation?: BarDirection;
+    columnLayout?: StackMultipleChartsVertically;
     showXAxis?: ShowXAxis;
     xAxisZoom?: XAxisZoomTool;
     showYAxis?: ShowYAxis;
@@ -191,6 +200,7 @@ export interface Styling {
     borderWidth?: LineWidth;
     borderDash?: LineDashStyle;
     pointStyle?: SymbolStyle;
+    showValueLabels?: ShowValueLabels;
     [k: string]: unknown;
 }
 /**

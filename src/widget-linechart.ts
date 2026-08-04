@@ -30,7 +30,7 @@ echarts.use([
     LegacyGridContainLabel
 ])
 
-import { InputData } from './definition-schema'
+import { ChartConfiguration } from './definition-schema'
 import { EChartsOption, SeriesOption } from 'echarts'
 import { TitleOption } from 'echarts/types/dist/shared'
 
@@ -43,12 +43,19 @@ type SeriesOptionX = SeriesOption & {
     minDate?: number
     maxDate?: number
     drawOrder: number
+    xAxisIndex?: number
     yAxisIndex?: number
+    // Which value axis (0 = primary, 1 = secondary) this series belongs to,
+    // independent of orientation. In a vertical chart the value axes are the
+    // y axes (left/right), in a horizontal one they are the x axes (bottom/top),
+    // so xAxisIndex/yAxisIndex alone cannot be read without knowing the
+    // orientation — this field can.
+    valueAxisIndex?: number
 }
 @customElement('widget-linechart-versionplaceholder')
 export class WidgetLinechart extends LitElement {
     @property({ type: Object })
-    inputData?: InputData
+    inputData?: ChartConfiguration
 
     @property({ type: Object })
     theme?: Theme
@@ -270,8 +277,48 @@ export class WidgetLinechart extends LitElement {
         echarts.registerTheme(theme.theme_name, filteredTheme)
     }
 
+    /** True when bars grow to the right instead of upwards (axis.orientation). */
+    isHorizontal(): boolean {
+        return this.inputData?.axis?.orientation === 'horizontal'
+    }
+
+    /**
+     * Index of the measured y-value inside a data point's `value` tuple.
+     *
+     * A point is stored as `[x, y, r]` for a vertical chart. A horizontal chart
+     * swaps the first two entries to `[y, x, r]`, because ECharts always maps
+     * tuple index 0 to the x axis and index 1 to the y axis — and in a
+     * horizontal chart the measured value is what belongs on the x axis.
+     */
+    private valueIndex(): number {
+        return this.isHorizontal() ? 0 : 1
+    }
+
+    /** Index of the x-value (category/timestamp) inside a data point's `value` tuple. */
+    private categoryIndex(): number {
+        return this.isHorizontal() ? 1 : 0
+    }
+
+    /**
+     * Formatter for the on-chart value labels (styling.showValueLabels).
+     * Rounds to two decimals to match the numeric axis labels, and leaves
+     * categorical y-values untouched.
+     */
+    private valueLabelFormatter(valueIdx: number) {
+        return (params: any) => {
+            const raw = Array.isArray(params?.value) ? params.value[valueIdx] : params?.value
+            if (raw === undefined || raw === null || raw === '') return ''
+            const num = Number(raw)
+            return isNaN(num) ? String(raw) : String(Math.round(num * 100) / 100)
+        }
+    }
+
     transformData() {
         if (!this?.inputData?.dataseries?.length) return
+
+        const horizontal = this.isHorizontal()
+        const valueIdx = this.valueIndex()
+        const categoryIdx = this.categoryIndex()
 
         // reset all existing chart dataseries
         this.canvasList.forEach((chartM) => {
@@ -309,22 +356,29 @@ export class WidgetLinechart extends LitElement {
                         : derivedBgColors[i]
                     : undefined
                 const data = distincts.length === 1 ? ds.data : ds.data?.filter((d) => d.pivot === piv)
+                // The value tuple is [x, y, r] for a vertical chart and [y, x, r]
+                // for a horizontal one — ECharts always reads index 0 as the x
+                // axis, and in a horizontal chart the measured value lives there.
+                const toTuple = (x: any, y: any, r: any) => (horizontal ? [y, x, r] : [x, y, r])
                 let data2 = this.inputData?.axis?.timeseries
-                    ? (data?.map((d) => ({ name: d.x, value: [new Date(d.x ?? '').getTime(), d.y, d.r] })) ??
-                      [])
-                    : (data?.map((d) => ({ name: d.x, value: [d.x, d.y, d.r] })) ?? [])
+                    ? (data?.map((d) => ({
+                          name: d.x,
+                          value: toTuple(new Date(d.x ?? '').getTime(), d.y, d.r)
+                      })) ?? [])
+                    : (data?.map((d) => ({ name: d.x, value: toTuple(d.x, d.y, d.r) })) ?? [])
 
                 let minDate: number = 0,
                     maxDate: number = 0,
                     extraData: (string | number | undefined)[][] = []
                 if (this.xAxisType() === 'time' && data2) {
-                    const dates = data2.map((d: any) => d.value[0] as number)
+                    const dates = data2.map((d: any) => d.value[categoryIdx] as number)
                     minDate = Math.min(...dates)
                     maxDate = Math.max(...dates)
                     // extraData = (pds?.data as any[][])?.filter((d: any) => d[0] < minDate) ?? []
                     // data2.unshift(...extraData) // add old data to the beginning of the new data
                     // data2 = [...extraData, ...data2] // leave old data in for smooth shifting animation and delete after draw
                 }
+                const valueAxisIndex = ds.yAxis === 'right' ? 1 : 0
                 const pds: SeriesOptionX = {
                     id: name,
                     name: name,
@@ -346,9 +400,21 @@ export class WidgetLinechart extends LitElement {
                     symbol: ds.styling?.pointStyle ?? 'circle',
                     symbolSize: (d: any[]) => d[2] ?? 0,
                     showSymbol: ds.styling?.pointStyle === 'none' ? false : true,
+                    label: {
+                        show: ds.styling?.showValueLabels ?? false,
+                        // Bars grow upwards when vertical and rightwards when
+                        // horizontal, so the label sits past the growing end.
+                        position: horizontal ? 'right' : 'top',
+                        fontSize: 12,
+                        formatter: this.valueLabelFormatter(valueIdx)
+                    },
                     data: data2 ?? [],
                     drawOrder: ds.advanced?.drawOrder ?? 0,
-                    yAxisIndex: ds.yAxis === 'right' ? 1 : 0
+                    valueAxisIndex: valueAxisIndex,
+                    // The secondary value axis is the right y axis when vertical
+                    // and the top x axis when horizontal.
+                    xAxisIndex: horizontal ? valueAxisIndex : 0,
+                    yAxisIndex: horizontal ? 0 : valueAxisIndex
                 }
                 let chartName = ds.advanced?.chartName ?? ''
                 chartName = chartName.replace('#split#', prefix)
@@ -485,6 +551,7 @@ export class WidgetLinechart extends LitElement {
         const modifier = 1
         // Sort chartContainer children by drawOrder and label
         if (!this.chartContainer) return
+        const horizontal = this.isHorizontal()
         for (const canvas of this.canvasList.values()) {
             if (canvas.element) this.chartContainer.appendChild(canvas.element)
         }
@@ -513,9 +580,14 @@ export class WidgetLinechart extends LitElement {
                 yAxisScalingRight: this.inputData?.axis?.yAxisScalingRight,
                 xAxisType: this.xAxisType(),
                 yAxisType: this.yAxisType(),
+                // Flipping the orientation swaps which option key holds the
+                // single category axis and which holds the value-axis array,
+                // so it must force a notMerge rebuild rather than a merge.
+                orientation: this.inputData?.axis?.orientation ?? 'vertical',
                 seriesCount: chart.series.length,
                 seriesNames: chart.series.map((s) => s.name).join(','),
-                seriesAxes: chart.series.map((s) => s.yAxisIndex ?? 0).join(',')
+                seriesAxes: chart.series.map((s) => s.valueAxisIndex ?? 0).join(','),
+                seriesLabels: chart.series.map((s) => ((s as any).label?.show ? 1 : 0)).join(',')
             })
             const configChanged = chart.lastConfig !== currentConfig
             chart.lastConfig = currentConfig
@@ -553,8 +625,9 @@ export class WidgetLinechart extends LitElement {
                 }
             }
 
-            option.dataZoom[0].show = this.inputData?.axis?.xAxisZoom ?? false
-            option.toolbox.show = this.inputData?.axis?.xAxisZoom ?? false
+            const showZoom = this.inputData?.axis?.xAxisZoom ?? false
+            option.dataZoom[0].show = showZoom
+            option.toolbox.show = showZoom
 
             // Y axes: index 0 = left (primary), index 1 = right (secondary).
             // The template holds an array, but getOption() (merge path) also returns
@@ -563,9 +636,10 @@ export class WidgetLinechart extends LitElement {
             while (yAxes.length < 2) yAxes.push({})
             option.yAxis = yAxes
 
-            const rightAxisUsed = chart.series.some((s) => (s.yAxisIndex ?? 0) === 1)
+            const hasValueLabels = chart.series.some((s) => !!(s as any).label?.show)
+            const rightAxisUsed = chart.series.some((s) => (s.valueAxisIndex ?? 0) === 1)
             const leftAxisUsed =
-                chart.series.length === 0 || chart.series.some((s) => (s.yAxisIndex ?? 0) === 0)
+                chart.series.length === 0 || chart.series.some((s) => (s.valueAxisIndex ?? 0) === 0)
             const showLeftAxis = showYAxis && leftAxisUsed
             const showRightAxis = showYAxis && rightAxisUsed
 
@@ -606,6 +680,42 @@ export class WidgetLinechart extends LitElement {
             })
             if (numericAxisLabel) yAxes[1].axisLabel = numericAxisLabel
 
+            // Orientation swap. Everything above builds one category axis (the
+            // x-values) and a two-entry array of value axes (the y-values). A
+            // vertical chart puts them where they were built; a horizontal one
+            // moves the category axis onto `yAxis` and the value axes onto
+            // `xAxis`. The axis *labels* keep their meaning either way:
+            // 'X-Axis Label' names the x-value dimension wherever it is drawn.
+            if (horizontal) {
+                const catAxis: any = Array.isArray(option.xAxis) ? option.xAxis[0] : option.xAxis
+                option.yAxis = {
+                    ...catAxis,
+                    position: 'left',
+                    // Read top-to-bottom, so the first data point is the top
+                    // bar — the convention for ranked horizontal bar charts.
+                    inverse: true,
+                    // 'start' is the top of an inverted axis, which keeps the
+                    // axis name clear of the value axis running along the bottom.
+                    // When a secondary value axis is in use it is drawn along
+                    // the top, so the name has to clear its tick labels too.
+                    nameLocation: 'start',
+                    nameGap: showRightAxis ? 30 : 10,
+                    nameTextStyle: { align: 'left' }
+                }
+                option.xAxis = yAxes.map((axis: any, index: number) => ({
+                    ...axis,
+                    position: index === 0 ? 'bottom' : 'top',
+                    nameLocation: 'middle',
+                    nameGap: 27,
+                    nameTextStyle: { align: 'center' }
+                }))
+                // Zooming still applies to the x-value dimension, which now
+                // lives on the y axis.
+                option.dataZoom = [
+                    { ...(option.dataZoom?.[0] ?? {}), xAxisIndex: undefined, yAxisIndex: [0] }
+                ]
+            }
+
             option.series = chart.series
             option.legend.show = showLegend
 
@@ -616,6 +726,13 @@ export class WidgetLinechart extends LitElement {
             const topPadding =
                 (showTitle || hasYAxisLabel || hasYAxisLabelRight ? 30 : 0) +
                 (showLegend && hasYAxisLabelRight ? 25 : 0)
+            // An ECharts slider dataZoom is ~30px thick and sits outside the
+            // grid's own bookkeeping, so nothing reserves room for it. Left
+            // unaccounted it is drawn straight over the plot, clipping the foot
+            // of every bar and washing out the axis labels underneath.
+            const ZOOM_THICKNESS = 40
+            const zoomPadBottom = showZoom && !horizontal ? ZOOM_THICKNESS : 0
+            const zoomPadRight = showZoom && horizontal ? ZOOM_THICKNESS : 0
             option.grid = {
                 ...option.grid,
                 show: showBox,
@@ -623,10 +740,29 @@ export class WidgetLinechart extends LitElement {
                 borderWidth: showBox ? 1 : 0,
                 borderColor: this.themeTitleColor ?? '#ccc',
                 top: topPadding,
-                bottom: showXAxis ? 20 : 0,
-                left: showLeftAxis ? 20 : 0,
-                right: 0,
+                // The category axis sits at the bottom when vertical and on the
+                // left when horizontal; the value axis is the other way round.
+                // The zoom slider is not accounted for by `containLabel`, so its
+                // thickness has to be reserved here as well — see ZOOM_THICKNESS.
+                bottom: ((horizontal ? showLeftAxis : showXAxis) ? 20 : 0) + zoomPadBottom,
+                left: (horizontal ? showXAxis : showLeftAxis) ? 20 : 0,
+                // A horizontal chart grows towards the right edge, so the last
+                // axis tick and any value label printed past the end of a bar
+                // need room that `containLabel` does not reserve for them.
+                right: (horizontal ? (hasValueLabels ? 45 : 15) : 0) + zoomPadRight,
                 containLabel: showXAxis || showYAxis
+            }
+
+            // Anchor the slider to the edge whose dimension it zooms: the bottom
+            // for a vertical chart, the right-hand side for a horizontal one
+            // (where it controls the y axis and ECharts draws it upright).
+            if (showZoom) {
+                Object.assign(
+                    option.dataZoom[0],
+                    horizontal
+                        ? { right: 0, top: topPadding, bottom: 20, left: undefined }
+                        : { bottom: 0, left: undefined, right: undefined, top: undefined }
+                )
             }
 
             // Calculate animation duration based on update frequency

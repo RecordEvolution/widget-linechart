@@ -1,6 +1,27 @@
 {
-    "title": "inputData",
-    "description": "A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Use this widget for time-series data, trend analysis, comparisons, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.",
+    "title": "Chart Configuration",
+    "description": "A versatile chart widget for visualizing data as line charts, bar charts, or scatter plots. Despite the package name, this is also THE bar chart widget: set dataseries[].type to 'bar' for vertical bars and axis.orientation to 'horizontal' for horizontal ones. Use this widget for time-series data, trend analysis, comparisons, frequency distributions, and general data visualization. Supports multiple data series with different chart types in the same view, automatic pivot-based series generation, zoom controls, and flexible styling options. The ECharts-based rendering provides smooth animations and interactive tooltips. Ideal for monitoring dashboards, historical data analysis, and any scenario requiring visual data representation over continuous or categorical dimensions.",
+    "aiSelection": {
+        "dataShape": "One or more series of (x, y) pairs. x is a timestamp, a number, or a category label and defines the position along the x-value dimension; y is the measured quantity. All series in a chart share one x dimension. An optional third column bound to data[].pivot splits a single series into one line or bar per distinct value of that column, and an optional data[].r sizes the marker for a bubble chart. Needs at least two columns of data; a single scalar has no shape to plot.",
+        "useWhen": [
+            "A quantity is measured repeatedly over time and the trend, shape or direction of change is the point (axis.timeseries: true, dataseries[].type: 'line').",
+            "A quantity is compared across a handful of discrete categories — counts, totals, frequency distributions, per-machine or per-site comparisons (dataseries[].type: 'bar', axis.timeseries: false). This is the correct widget for any bar chart; there is no separate bar chart widget.",
+            "Categories are being ranked, or their names are long enough to be unreadable side by side under a vertical axis (dataseries[].type: 'bar', axis.orientation: 'horizontal').",
+            "Two numeric variables are being correlated as a cloud of individual points (dataseries[].type: 'scatter'), optionally with data[].r encoding a third variable as marker size.",
+            "Several quantities with different units or wildly different ranges belong on one chart (assign the second group dataseries[].yAxis: 'right').",
+            "The same measurement is broken down by an entity — one line per machine, per site, per program (bind the breakdown column to data[].pivot)."
+        ],
+        "notFor": [
+            "Parts of a whole, shares, or percentages that add up to 100% — use widget-doughnut.",
+            "A single current number, reading or KPI with no second dimension to plot — use widget-value, or widget-gauge when it should be read against a min/max range.",
+            "Records the user needs to read row by row, or data with more columns than an x and a y — use widget-table.",
+            "Intensity or density across two categorical dimensions at once, i.e. a matrix or calendar grid — use widget-heatmap.",
+            "How long an entity stayed in each discrete state over time (state timelines, machine mode history, up/down periods drawn as spans). A bar chart of state durations is the wrong shape — use widget-statehistory.",
+            "Anything positioned by geographic coordinates — use widget-mapbox.",
+            "A single binary or few-valued status shown as an indicator rather than plotted — use widget-signal, or widget-switch when the user must also be able to toggle it.",
+            "Free text, headings or explanatory prose — use widget-label, widget-textbox or widget-markdown."
+        ]
+    },
     "type": "object",
     "properties": {
         "title": {
@@ -73,9 +94,18 @@
                     "dataDrivenDisabled": true,
                     "order": 4
                 },
+                "orientation": {
+                    "title": "Bar Direction",
+                    "description": "The direction in which bars grow and the chart is read. 'vertical' (the default) places the x-values (categories or timestamps) along the horizontal axis at the bottom and the measured y-values along the vertical axis, so bars grow upwards. 'horizontal' swaps the two axes: the x-values run down the left-hand vertical axis, first data point at the top, and the y-values grow to the right, producing a horizontal bar chart. Choose 'horizontal' for ranked or frequency charts, and whenever category names are long enough to be unreadable when squeezed under a vertical axis. This setting affects only the drawing direction, not the meaning of the other options: 'X-Axis Label' always names the x-value dimension and 'Y-Axis Label' always names the measured values, whichever side of the chart they end up on. Applies to all series in the chart, including line and scatter series.",
+                    "type": "string",
+                    "enum": ["vertical", "horizontal"],
+                    "default": "vertical",
+                    "dataDrivenDisabled": true,
+                    "order": 4.5
+                },
                 "columnLayout": {
-                    "title": "Vertical Layout",
-                    "description": "When multiple charts are drawn (via chartName grouping), this controls their arrangement. Enabled = stacked vertically, Disabled = arranged horizontally side by side.",
+                    "title": "Stack Multiple Charts Vertically",
+                    "description": "Controls how SEPARATE charts are arranged relative to each other when the series are grouped into more than one chart via 'Chart Name' (dataseries[].advanced.chartName). Enabled = the charts are stacked one above the other, Disabled = the charts sit side by side. This is a page-layout option and has no effect on a single chart; to change the direction bars grow in, use 'Bar Direction' (axis.orientation) instead.",
                     "type": "boolean",
                     "dataDrivenDisabled": true,
                     "order": 5
@@ -218,6 +248,14 @@
                                     "none"
                                 ],
                                 "order": 5
+                            },
+                            "showValueLabels": {
+                                "title": "Show Value Labels",
+                                "description": "When enabled, each data point's y-value is printed as text directly on the chart: above the top of every bar in a vertical bar chart, just past the end of the bar in a horizontal one, and above the marker for line and scatter series. Enable this whenever the reader is meant to read exact numbers off the chart rather than estimate them against the axis — the usual expectation for bar charts of counts, totals or frequencies, and the setting to use when someone asks for the values to be shown on or above the bars. Numbers are rounded to two decimal places; non-numeric values are printed unchanged. Leave it disabled for charts with many data points, where the labels would overlap each other.",
+                                "type": "boolean",
+                                "default": false,
+                                "dataDrivenDisabled": true,
+                                "order": 6
                             }
                         }
                     },
