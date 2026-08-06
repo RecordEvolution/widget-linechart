@@ -592,10 +592,25 @@ export class WidgetLinechart extends LitElement {
             const configChanged = chart.lastConfig !== currentConfig
             chart.lastConfig = currentConfig
 
-            // Use efficient merge for data-only updates, full rebuild for config changes
-            const option: any = configChanged
-                ? window.structuredClone(this.template)
-                : (chart.echart?.getOption() ?? window.structuredClone(this.template))
+            // Always build the option from the template — never from getOption().
+            //
+            // getOption() returns every component normalized to an *array*, while
+            // everything below treats the single-instance ones (title, xAxis, grid,
+            // legend, toolbox) as plain objects. `{ ...option.grid }` on an array
+            // yields `{ '0': grid }`, which ECharts then deep-merges back into its
+            // stored option — burying a copy one level deeper on *every* update. The
+            // stored option grew one level per frame until zrender's recursive
+            // merge()/clone() ran out of stack, so any board left open on a live
+            // time series eventually died with "Maximum call stack size exceeded".
+            // Assignments like `option.title.text` landed on the array object for the
+            // same reason and were silently dropped, which is why the title, axis
+            // name, legend and zoom toolbox stopped tracking config on that path.
+            //
+            // A template clone carries only the keys we actually set, so a merge
+            // update still preserves ECharts-side state (zoom position, animation
+            // continuity) — and it skips deep-cloning every series' data each frame.
+            // `configChanged` still decides merge vs. rebuild via notMerge below.
+            const option: any = window.structuredClone(this.template)
 
             // Title
             option.title.text = label
@@ -630,8 +645,8 @@ export class WidgetLinechart extends LitElement {
             option.toolbox.show = showZoom
 
             // Y axes: index 0 = left (primary), index 1 = right (secondary).
-            // The template holds an array, but getOption() (merge path) also returns
-            // component options normalized to arrays — handle both shapes.
+            // The template holds an array; normalize anyway so a template edit
+            // that drops down to a single axis object cannot silently break this.
             const yAxes: any[] = Array.isArray(option.yAxis) ? option.yAxis : [option.yAxis ?? {}]
             while (yAxes.length < 2) yAxes.push({})
             option.yAxis = yAxes
