@@ -54,7 +54,7 @@ export type StackMultipleChartsVertically = boolean;
  */
 export type ShowXAxis = boolean;
 /**
- * When enabled, shows a slider control below the chart for zooming into specific x-axis ranges. Useful for long time series where users need to focus on specific periods.
+ * When enabled, shows a slider control below the chart for zooming into specific x-axis ranges. Leave this DISABLED (the default) unless the user explicitly asks for a zoom, pan, or time-range slider: the slider costs vertical chart space, and dashboards usually already control the visible time range through their data query or a filter widget. Do not enable it just because the data is a long time series.
  */
 export type XAxisZoomTool = boolean;
 /**

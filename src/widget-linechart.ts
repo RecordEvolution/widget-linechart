@@ -793,6 +793,28 @@ export class WidgetLinechart extends LitElement {
         })
     }
 
+    // ECharts positions a slider dataZoom against the grid rect from *before*
+    // `containLabel` insets the plot to make room for the axis labels, so the
+    // slider comes out shifted towards the label side by exactly that inset and
+    // its window no longer lines up with the data above it. The real plot rect
+    // only exists after a render, so this runs on the chart's 'finished' event
+    // and pins the slider to it. The pin itself triggers another render and
+    // thus another 'finished'; the already-aligned check ends that recursion.
+    private alignZoomSlider(echart: echarts.ECharts) {
+        if (!(this.inputData?.axis?.xAxisZoom ?? false)) return
+        const model = (echart as any).getModel?.()
+        const rect = model?.getComponent('grid')?.coordinateSystem?.getRect?.()
+        const dz = model?.getComponent('dataZoom', 0)?.option
+        if (!rect || !dz) return
+        // The slider tracks the zoomed dimension: the plot's width along the
+        // bottom when vertical, its height along the right edge when horizontal.
+        const pin: Record<string, number> = this.isHorizontal()
+            ? { top: rect.y, height: rect.height }
+            : { left: rect.x, width: rect.width }
+        if (Object.keys(pin).every((k) => Math.abs(pin[k] - dz[k]) < 0.5)) return
+        echart.setOption({ dataZoom: [pin] }, { lazyUpdate: true })
+    }
+
     deleteCharts() {
         this.canvasList.forEach((chart, label) => {
             chart.echart?.dispose()
@@ -819,6 +841,7 @@ export class WidgetLinechart extends LitElement {
         this.chartContainer.appendChild(newContainer)
 
         const newChart = echarts.init(newContainer, this.theme?.theme_name)
+        newChart.on('finished', () => this.alignZoomSlider(newChart))
         const chart = {
             echart: newChart,
             series: [] as SeriesOptionX[],
