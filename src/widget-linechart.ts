@@ -786,7 +786,6 @@ export class WidgetLinechart extends LitElement {
             option.animationEasing = 'linear'
             option.animationDuration = animationDuration
             option.animationDurationUpdate = animationDuration
-            chart.echart?.on('finished', () => (chart.drawing = false))
             chart.drawing = true
             chart.echart?.setOption(option, { notMerge: configChanged, lazyUpdate: true })
             // chart.echart?.resize()
@@ -841,7 +840,6 @@ export class WidgetLinechart extends LitElement {
         this.chartContainer.appendChild(newContainer)
 
         const newChart = echarts.init(newContainer, this.theme?.theme_name)
-        newChart.on('finished', () => this.alignZoomSlider(newChart))
         const chart = {
             echart: newChart,
             series: [] as SeriesOptionX[],
@@ -851,6 +849,15 @@ export class WidgetLinechart extends LitElement {
             updateIntervals: [],
             lastMaxTimestamp: 0
         }
+        // One 'finished' handler per chart, registered here rather than in
+        // applyData(). applyData() runs on every data tick, so registering
+        // there added a handler per tick and never removed one: a board left
+        // open on a live series accumulated one closure per update, all of them
+        // invoked on every subsequent render.
+        newChart.on('finished', () => {
+            chart.drawing = false
+            this.alignZoomSlider(newChart)
+        })
         this.canvasList.set(label, chart)
 
         return chart
