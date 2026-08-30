@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `npm run analyze` | Run custom-elements-manifest analyzer (LitElement)                   |
 | `npm run link`    | Build, `npm link`, then link into `../RESWARM/frontend` for integration testing |
 | `npm run unlink`  | Reverse of `link` and reinstall the published package                |
-| `npm run release` | `build` → `types` → `npm version patch` (no `v` prefix) → push branch + tag → rebuild |
+| `npm run release` | `npm version patch`: preflight guards (on `main`, clean tree, not behind `origin/main`, generated files current, build passes) → commit + bare-semver tag → `git push --follow-tags` → waits on the CI publish. Also `release:minor` / `release:major`. |
 
 No test runner, no linter is configured. Node `>=24.9.0`, npm `>=10.0.2`.
 
