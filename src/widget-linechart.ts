@@ -135,10 +135,12 @@ export class WidgetLinechart extends LitElement {
             dataZoom: [
                 {
                     show: false,
-                    realtime: true,
+                    realtime: true
                     // start: 30,
                     // end: 70,
-                    xAxisIndex: [0, 1]
+                    // No axis index here: which axis carries the zoomed
+                    // dimension depends on the orientation, so applyData()
+                    // names it on every build.
                 }
             ],
             xAxis: {
@@ -724,12 +726,23 @@ export class WidgetLinechart extends LitElement {
                     nameGap: 27,
                     nameTextStyle: { align: 'center' }
                 }))
-                // Zooming still applies to the x-value dimension, which now
-                // lives on the y axis.
-                option.dataZoom = [
-                    { ...(option.dataZoom?.[0] ?? {}), xAxisIndex: undefined, yAxisIndex: [0] }
-                ]
             }
+
+            // Point the zoom at the one axis that carries the x-value
+            // dimension: `xAxis` when vertical, `yAxis` when horizontal (the
+            // orientation swap above moved it there).
+            //
+            // Both keys are written on every build, and neither may name an
+            // axis the option does not declare. ECharts resolves these indices
+            // to axis components when the option is merged and dereferences
+            // them again in its dataZoom processor without checking, so an
+            // index with no axis behind it — a hard-coded one, or one left over
+            // from the other orientation on a merge update — crashes the chart
+            // with "Cannot set properties of undefined (setting
+            // '__dzAxisProxy')". The vertical layout declares a single x axis,
+            // so the only valid target is index 0.
+            option.dataZoom[0].xAxisIndex = horizontal ? undefined : [0]
+            option.dataZoom[0].yAxisIndex = horizontal ? [0] : undefined
 
             option.series = chart.series
             option.legend.show = showLegend
