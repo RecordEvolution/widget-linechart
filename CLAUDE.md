@@ -63,6 +63,9 @@ Rules of thumb when maintaining it:
 ```ts
 @property({ type: Object }) inputData?: ChartConfiguration                     // shape from schema
 @property({ type: Object }) theme?: { theme_name: string; theme_object: any }  // ECharts theme
+
+Theming: `registerTheme()` resolves colours as a `var(--re-text-color, <theme value>)` / `var(--re-tile-background-color, <theme value>)` chain rather than reading the host's custom properties through `getComputedStyle`. The host property still wins over `theme_object`, but nothing is snapshotted, so a board style edit repaints the tile live. ECharts cannot resolve a `var()` chain (it paints to a canvas), so the few canvas colours go through `resolvedTextColor()`, which reads the property at the point of use.
+
 @property({ type: Object }) timeRange?: { start: number; end: number }
 ```
 
