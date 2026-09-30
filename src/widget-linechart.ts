@@ -120,9 +120,15 @@ export class WidgetLinechart extends LitElement {
             tooltip: {
                 trigger: 'axis'
             },
+            // Always a single row: overflowing items page instead of wrapping, so
+            // the legend has a fixed height that applyData() can reserve above
+            // the plot. A wrapping legend grew downward over the plot on narrow
+            // tiles, since nothing in the grid layout accounts for it.
             legend: {
-                right: 0,
-                top: 0
+                type: 'scroll',
+                orient: 'horizontal',
+                left: 'center',
+                top: 0 // set per build in applyData()
             },
             grid: {
                 top: 30,
@@ -133,6 +139,9 @@ export class WidgetLinechart extends LitElement {
             },
             toolbox: {
                 show: true,
+                // Match the legend's padding so the button lines up with the
+                // legend row it shares (ECharts 6 defaults this to 15).
+                padding: 5,
                 feature: {
                     // dataZoom: {
                     //     yAxisIndex: 'none'
@@ -766,16 +775,42 @@ export class WidgetLinechart extends LitElement {
             option.dataZoom[0].xAxisIndex = horizontal ? undefined : [0]
             option.dataZoom[0].yAxisIndex = horizontal ? [0] : undefined
 
+            // The top edge is a stack of rows, each with a fixed height: the
+            // chart title, then the legend (a one-row scroll legend, see the
+            // template), then the y-axis names that ECharts draws just above
+            // the plot at nameLocation 'end'. Sharing rows made them collide on
+            // narrow tiles.
+            const TITLE_ROW = 24
+            const LEGEND_ROW = 24
+            const AXIS_NAME_ROW = 25
+            // The title text is the chart name, which is empty unless the series
+            // set advanced.chartName, so only a non-empty one takes a row.
+            const hasChartTitle = showTitle && !!label
+            const legendTop = hasChartTitle ? TITLE_ROW : 0
+            // The trailing gap keeps half of the topmost tick label from being
+            // clipped when nothing else sits above the plot.
+            const topPadding =
+                legendTop +
+                (showLegend ? LEGEND_ROW : 0) +
+                (hasYAxisLabel || hasYAxisLabelRight ? AXIS_NAME_ROW : 10)
+
             option.series = chart.series
             option.legend.show = showLegend
-
-            // Dynamic grid padding based on visible elements
-            // Add extra top space when Y-axis label is shown at 'end' position.
-            // The right axis name and the legend both live in the top-right corner,
-            // so reserve an extra row when both are visible.
-            const topPadding =
-                (showTitle || hasYAxisLabel || hasYAxisLabelRight ? 30 : 0) +
-                (showLegend && hasYAxisLabelRight ? 25 : 0)
+            option.legend.top = legendTop
+            // The zoom-reset button shares the legend row at its right end, so
+            // the legend (and its pager) is narrowed to stay clear of it.
+            option.toolbox.top = legendTop
+            option.toolbox.right = 0
+            if (showZoom) option.legend.width = '80%'
+            // The theme's legend colours were picked for its own background and
+            // vanish when the host overrides the tile colours; the pager's
+            // defaults (#333 text, dark icons) vanish on any dark tile.
+            const textColor = this.resolvedTextColor()
+            if (textColor) {
+                option.legend.textStyle = { color: textColor }
+                option.legend.pageTextStyle = { color: textColor }
+                option.legend.pageIconColor = textColor
+            }
             // An ECharts slider dataZoom is ~30px thick and sits outside the
             // grid's own bookkeeping, so nothing reserves room for it. Left
             // unaccounted it is drawn straight over the plot, clipping the foot
