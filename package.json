@@ -50,14 +50,14 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/RecordEvolution/widget-linechart.git"
+        "url": "git+https://github.com/IronFlock/widget-linechart.git"
     },
     "keywords": [
         "widget",
         "linechart"
     ],
     "bugs": {
-        "url": "https://github.com/RecordEvolution/widget-linechart/issues"
+        "url": "https://github.com/IronFlock/widget-linechart/issues"
     },
-    "homepage": "https://github.com/RecordEvolution/widget-linechart#readme"
+    "homepage": "https://github.com/IronFlock/widget-linechart#readme"
 }
