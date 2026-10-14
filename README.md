@@ -7,7 +7,7 @@ A Lit 3.x web component for rendering interactive line, bar, and scatter charts 
 ## Installation
 
 ```bash
-npm i @record-evolution/widget-linechart
+npm i @ironflock/widget-linechart
 ```
 
 ## Usage
@@ -17,14 +17,14 @@ npm i @record-evolution/widget-linechart
 When using a bundler, install the widget and its peer dependencies:
 
 ```bash
-npm i @record-evolution/widget-linechart echarts@^6.0.0 tinycolor2@^1.6.0
+npm i @ironflock/widget-linechart echarts@^6.0.0 tinycolor2@^1.6.0
 ```
 
 Then import and use:
 
 ```html
 <script type="module">
-    import '@record-evolution/widget-linechart/widget-linechart.js'
+    import '@ironflock/widget-linechart/widget-linechart.js'
 </script>
 
 <widget-linechart-1.6.28></widget-linechart-1.6.28>
@@ -59,7 +59,7 @@ For CDN usage without a bundler, configure an import map with all dependencies:
 
 <script
     type="module"
-    src="https://cdn.jsdelivr.net/npm/@record-evolution/widget-linechart@1.6.28/dist/widget-linechart.js"
+    src="https://cdn.jsdelivr.net/npm/@ironflock/widget-linechart@1.7.10/dist/widget-linechart.js"
 ></script>
 
 <widget-linechart-1.6.28></widget-linechart-1.6.28>
