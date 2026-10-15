@@ -91,6 +91,8 @@ export class WidgetLinechart extends LitElement {
     modifier: number = 1
     version: string = 'versionplaceholder'
     resizeObserver?: ResizeObserver
+    // inputData or theme changed while detached, so the charts are not up to date
+    private chartsStale = false
     updateThresholdMs: number = 300
     private maxIntervalSamples: number = 3
 
@@ -345,6 +347,13 @@ export class WidgetLinechart extends LitElement {
     }
 
     transformData() {
+        // Detached: make no charts. disconnectedCallback disposes the others, so new
+        // ones would leak if the element never comes back; connectedCallback rebuilds
+        // from the current inputData and theme if it does.
+        if (!this.isConnected) {
+            this.chartsStale = true
+            return
+        }
         if (!this?.inputData?.dataseries?.length) return
 
         const horizontal = this.isHorizontal()
@@ -931,12 +940,35 @@ export class WidgetLinechart extends LitElement {
         return chart
     }
 
+    connectedCallback() {
+        super.connectedCallback()
+        // firstUpdated creates the observer; after a move (studio's keyed tile
+        // repeat) it has to observe the container again.
+        if (this.resizeObserver && this.chartContainer) this.resizeObserver.observe(this.chartContainer)
+        // Reattached after disconnectedCallback disposed the charts, or after a change
+        // that transformData skipped while detached: rebuild them.
+        if (this.hasUpdated && (this.chartsStale || !this.canvasList.size)) this.rebuildCharts()
+    }
+
     disconnectedCallback() {
-        if (this.resizeObserver && this.chartContainer) {
-            this.resizeObserver.unobserve(this.chartContainer)
-            this.resizeObserver.disconnect()
-        }
+        this.resizeObserver?.disconnect()
         super.disconnectedCallback()
+        // ECharts keeps every instance in a global registry until dispose(), and each
+        // one holds its canvases and, through its div, this whole element, so dispose
+        // the charts once the element is really gone. A DOM move (studio's keyed tile
+        // repeat) disconnects and reconnects within one task, so decide after it.
+        setTimeout(() => {
+            if (!this.isConnected) this.deleteCharts()
+        })
+    }
+
+    private rebuildCharts() {
+        this.chartsStale = false
+        this.deleteCharts()
+        this.transformData()
+        this.applyData()
+        // deleteCharts empties canvasList in place, which Lit does not notice
+        this.requestUpdate()
     }
 
     static styles = css`
