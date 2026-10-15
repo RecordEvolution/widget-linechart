@@ -12,7 +12,7 @@
             "The same measurement is broken down by an entity — one line per machine, per site, per program (bind the breakdown column to data[].pivot)."
         ],
         "notFor": [
-            "Parts of a whole, shares, or percentages that add up to 100% — use widget-doughnut.",
+            "Parts of a whole, shares, or percentages that add up to 100%, when the parts are a fixed set that arrive as columns of one row (or as one value each) — use widget-doughnut. When the categories are ROWS of the result (one row per cause or program, e.g. a GROUP BY), the doughnut cannot show them; this widget's own bar mode can (dataseries[].type: 'bar', axis.timeseries: false, the category on the x axis).",
             "A single current number, reading or KPI with no second dimension to plot — use widget-value, or widget-gauge when it should be read against a min/max range.",
             "Records the user needs to read row by row, or data with more columns than an x and a y — use widget-table.",
             "Intensity or density across two categorical dimensions at once, i.e. a matrix or calendar grid — use widget-heatmap.",
