@@ -346,6 +346,17 @@ export class WidgetLinechart extends LitElement {
         }
     }
 
+    /**
+     * The dataseries in draw order, without null list slots. A sorted copy: the
+     * config belongs to the host, so it is read but never reordered.
+     */
+    private sortedDataseries() {
+        const list = this.inputData?.dataseries
+        return (Array.isArray(list) ? list : [])
+            .filter((ds) => ds && typeof ds === 'object')
+            .sort((a, b) => (a.advanced?.drawOrder ?? 0) - (b.advanced?.drawOrder ?? 0))
+    }
+
     transformData() {
         // Detached: make no charts. disconnectedCallback disposes the others, so new
         // ones would leak if the element never comes back; connectedCallback rebuilds
@@ -354,8 +365,6 @@ export class WidgetLinechart extends LitElement {
             this.chartsStale = true
             return
         }
-        if (!this?.inputData?.dataseries?.length) return
-
         const horizontal = this.isHorizontal()
         const valueIdx = this.valueIndex()
         const categoryIdx = this.categoryIndex()
@@ -365,15 +374,14 @@ export class WidgetLinechart extends LitElement {
             chartM.series = []
             chartM.doomed = true
         })
-        this.inputData.dataseries.sort((a, b) => (a.advanced?.drawOrder ?? 0) - (b.advanced?.drawOrder ?? 0))
-        this.inputData.dataseries.forEach((ds) => {
-            ds.advanced ??= {}
-            ds.advanced.chartName ??= ''
-
-            ds.data ??= []
+        // A missing or emptied list still runs the passes below, so the old charts are
+        // disposed and No Data shows instead of the last values.
+        this.sortedDataseries().forEach((ds) => {
+            // The config belongs to the host: defaults are read, never written into it.
+            const dsData = ds.data ?? []
 
             // pivot data
-            const distincts = [...new Set(ds.data.map((d) => d.pivot ?? ''))].sort()
+            const distincts = [...new Set(dsData.map((d) => d.pivot ?? ''))].sort()
             const derivedBgColors = tinycolor(ds.backgroundColor as ColorInput | undefined)
                 .monochromatic(distincts.length)
                 .map((c: any) => c.toHexString())
@@ -395,7 +403,7 @@ export class WidgetLinechart extends LitElement {
                         ? ds.backgroundColor
                         : derivedBgColors[i]
                     : undefined
-                const data = distincts.length === 1 ? ds.data : ds.data?.filter((d) => d.pivot === piv)
+                const data = distincts.length === 1 ? dsData : dsData.filter((d) => d.pivot === piv)
                 // The value tuple is [x, y, r] for a vertical chart and [y, x, r]
                 // for a horizontal one — ECharts always reads index 0 as the x
                 // axis, and in a horizontal chart the measured value lives there.
@@ -514,7 +522,7 @@ export class WidgetLinechart extends LitElement {
             return this.cachedXAxisType
         }
         this.cachedXAxisType = 'value'
-        for (const ds of this.inputData?.dataseries ?? []) {
+        for (const ds of this.sortedDataseries()) {
             const point = ds.data?.find((d) => d.x !== undefined && d.x !== null)
             if (point) {
                 this.cachedXAxisType = !isNaN(Number(point.x)) ? 'value' : 'category'
@@ -527,7 +535,7 @@ export class WidgetLinechart extends LitElement {
     yAxisType(): 'value' | 'log' | 'category' | undefined {
         if (this.cachedYAxisType) return this.cachedYAxisType
         this.cachedYAxisType = 'value'
-        for (const ds of this.inputData?.dataseries ?? []) {
+        for (const ds of this.sortedDataseries()) {
             const point = ds.data?.find((d) => d.y !== undefined && d.y !== null)
             if (point) {
                 this.cachedYAxisType = !isNaN(Number(point.y)) ? 'value' : 'category'
